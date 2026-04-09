@@ -90,6 +90,7 @@ scripts\build_windows.bat
 ./build/pqc_cli encaps --pub pub.key --ct out.ct --ss out.ss
 ./build/pqc_cli decaps --sec sec.key --ct out.ct --ss recovered.ss
 ./build/pqc_cli benchmark --iterations 1000
+./build/pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.csv
 ```
 
 ## Test

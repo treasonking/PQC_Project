@@ -2,7 +2,7 @@
 
 ## Current Status
 
-현재는 더미 KEM 구현 기준으로 CLI에서 평균 시간을 측정한다.
+CLI benchmark는 `dummy`와 `mlkem-ref` 모두 지원하며, 콘솔 출력 + 파일 저장을 지원한다.
 
 - `keygen`
 - `encaps`
@@ -11,17 +11,17 @@
 ## Command
 
 ```bash
-pqc_cli benchmark --iterations 1000
+pqc_cli benchmark --alg mlkem-ref --iterations 1000
+pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.txt
+pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.csv
 ```
 
-## Planned Upgrade
+CSV/TXT 결과 파싱:
 
-실제 ML-KEM 참조 구현 연결 후 아래를 문서화한다.
-
-- 키 생성 평균 시간
-- 캡슐화/복호화 평균 시간
-- 공개키/비밀키/ciphertext/shared secret 크기
-- 환경 정보(OS, CPU, 컴파일러, 빌드 옵션)
+```bash
+python bench/parse_results.py bench_result.txt
+python bench/parse_results.py bench_result.csv
+```
 
 ## Output Policy
 

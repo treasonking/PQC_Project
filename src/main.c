@@ -5,6 +5,85 @@
 #include <string.h>
 #include <time.h>
 
+static int has_csv_extension(const char *path) {
+    const char *dot;
+    if (path == NULL) {
+        return 0;
+    }
+    dot = strrchr(path, '.');
+    return dot != NULL && strcmp(dot, ".csv") == 0;
+}
+
+static int write_benchmark_output(const char *out_path,
+                                  const char *algorithm,
+                                  int iterations,
+                                  size_t pk,
+                                  size_t sk,
+                                  size_t ct,
+                                  size_t ss,
+                                  double keygen_ms,
+                                  double encaps_ms,
+                                  double decaps_ms) {
+    FILE *fp;
+    time_t now;
+    struct tm *tm_info;
+    char timestamp[64];
+
+    if (out_path == NULL) {
+        return 1;
+    }
+
+    now = time(NULL);
+    tm_info = localtime(&now);
+    if (tm_info == NULL) {
+        return 0;
+    }
+    if (strftime(timestamp, sizeof(timestamp), "%Y-%m-%d %H:%M:%S", tm_info) == 0) {
+        return 0;
+    }
+
+    if (has_csv_extension(out_path)) {
+        int write_header = 0;
+        fp = fopen(out_path, "rb");
+        if (fp == NULL) {
+            write_header = 1;
+        } else {
+            if (fseek(fp, 0, SEEK_END) != 0 || ftell(fp) <= 0) {
+                write_header = 1;
+            }
+            fclose(fp);
+        }
+
+        fp = fopen(out_path, "ab");
+        if (fp == NULL) {
+            return 0;
+        }
+        if (write_header) {
+            fprintf(fp, "timestamp,algorithm,iterations,public_key_size,secret_key_size,ciphertext_size,shared_secret_size,avg_keygen_ms,avg_encaps_ms,avg_decaps_ms\n");
+        }
+        fprintf(fp, "%s,%s,%d,%zu,%zu,%zu,%zu,%.6f,%.6f,%.6f\n",
+                timestamp, algorithm, iterations, pk, sk, ct, ss, keygen_ms, encaps_ms, decaps_ms);
+        fclose(fp);
+        return 1;
+    }
+
+    fp = fopen(out_path, "wb");
+    if (fp == NULL) {
+        return 0;
+    }
+    fprintf(fp, "benchmark iterations=%d\n", iterations);
+    fprintf(fp, "algorithm=%s\n", algorithm);
+    fprintf(fp, "public_key_size=%zu\n", pk);
+    fprintf(fp, "secret_key_size=%zu\n", sk);
+    fprintf(fp, "ciphertext_size=%zu\n", ct);
+    fprintf(fp, "shared_secret_size=%zu\n", ss);
+    fprintf(fp, "avg_keygen_ms=%.6f\n", keygen_ms);
+    fprintf(fp, "avg_encaps_ms=%.6f\n", encaps_ms);
+    fprintf(fp, "avg_decaps_ms=%.6f\n", decaps_ms);
+    fclose(fp);
+    return 1;
+}
+
 static void print_usage(const char *prog) {
     printf("Usage:\n");
     printf("  %s help\n", prog);
@@ -12,7 +91,7 @@ static void print_usage(const char *prog) {
     printf("  %s keygen --pub <file> --sec <file>\n", prog);
     printf("  %s encaps --pub <file> --ct <file> --ss <file>\n", prog);
     printf("  %s decaps --sec <file> --ct <file> --ss <file>\n", prog);
-    printf("  %s benchmark --iterations <N>\n", prog);
+    printf("  %s benchmark --iterations <N> [--out <result.txt|result.csv>]\n", prog);
     printf("Options:\n");
     printf("  --alg <dummy|mlkem-ref>\n");
 }
@@ -244,6 +323,7 @@ done:
 
 static int handle_benchmark(int argc, char **argv) {
     const char *iter_arg = arg_value(argc, argv, "--iterations");
+    const char *out_path = arg_value(argc, argv, "--out");
     int iterations = iter_arg ? atoi(iter_arg) : 1000;
     int i;
     clock_t start, end;
@@ -256,6 +336,7 @@ static int handle_benchmark(int argc, char **argv) {
     uint8_t *ciphertext = NULL;
     uint8_t *shared_secret = NULL;
     pqc_status_t st;
+    int rc = 0;
 
     if (iterations <= 0) {
         fprintf(stderr, "iterations must be > 0\n");
@@ -269,11 +350,8 @@ static int handle_benchmark(int argc, char **argv) {
     shared_secret = (uint8_t *)malloc(ss);
     if (pub == NULL || sec == NULL || ciphertext == NULL || shared_secret == NULL) {
         fprintf(stderr, "memory allocation failed\n");
-        free(pub);
-        free(sec);
-        free(ciphertext);
-        free(shared_secret);
-        return 1;
+        rc = 1;
+        goto done;
     }
 
     start = clock();
@@ -281,7 +359,8 @@ static int handle_benchmark(int argc, char **argv) {
         st = pqc_kem_keypair(pub, pk, sec, sk);
         if (st != PQC_OK) {
             fprintf(stderr, "benchmark keygen failed: %s\n", pqc_status_to_string(st));
-            return 1;
+            rc = 1;
+            goto done;
         }
     }
     end = clock();
@@ -290,7 +369,8 @@ static int handle_benchmark(int argc, char **argv) {
     st = pqc_kem_keypair(pub, pk, sec, sk);
     if (st != PQC_OK) {
         fprintf(stderr, "benchmark setup failed: %s\n", pqc_status_to_string(st));
-        return 1;
+        rc = 1;
+        goto done;
     }
 
     start = clock();
@@ -298,7 +378,8 @@ static int handle_benchmark(int argc, char **argv) {
         st = pqc_kem_encaps(ciphertext, ct, shared_secret, ss, pub, pk);
         if (st != PQC_OK) {
             fprintf(stderr, "benchmark encaps failed: %s\n", pqc_status_to_string(st));
-            return 1;
+            rc = 1;
+            goto done;
         }
     }
     end = clock();
@@ -307,7 +388,8 @@ static int handle_benchmark(int argc, char **argv) {
     st = pqc_kem_encaps(ciphertext, ct, shared_secret, ss, pub, pk);
     if (st != PQC_OK) {
         fprintf(stderr, "benchmark setup failed: %s\n", pqc_status_to_string(st));
-        return 1;
+        rc = 1;
+        goto done;
     }
 
     start = clock();
@@ -315,7 +397,8 @@ static int handle_benchmark(int argc, char **argv) {
         st = pqc_kem_decaps(shared_secret, ss, ciphertext, ct, sec, sk);
         if (st != PQC_OK) {
             fprintf(stderr, "benchmark decaps failed: %s\n", pqc_status_to_string(st));
-            return 1;
+            rc = 1;
+            goto done;
         }
     }
     end = clock();
@@ -323,18 +406,32 @@ static int handle_benchmark(int argc, char **argv) {
 
     printf("benchmark iterations=%d\n", iterations);
     printf("algorithm=%s\n", pqc_get_algorithm_name());
+    printf("public_key_size=%zu\n", pk);
+    printf("secret_key_size=%zu\n", sk);
+    printf("ciphertext_size=%zu\n", ct);
+    printf("shared_secret_size=%zu\n", ss);
     printf("avg_keygen_ms=%.3f\n", keygen_ms);
     printf("avg_encaps_ms=%.3f\n", encaps_ms);
     printf("avg_decaps_ms=%.3f\n", decaps_ms);
     printf("note=development_benchmark_not_for_production\n");
 
+    if (out_path != NULL) {
+        if (!write_benchmark_output(out_path, pqc_get_algorithm_name(), iterations, pk, sk, ct, ss, keygen_ms, encaps_ms, decaps_ms)) {
+            fprintf(stderr, "failed to write benchmark output file: %s\n", out_path);
+            rc = 1;
+            goto done;
+        }
+        printf("saved=%s\n", out_path);
+    }
+
+done:
     secure_memzero(sec, sk);
     secure_memzero(shared_secret, ss);
     free(pub);
     free(sec);
     free(ciphertext);
     free(shared_secret);
-    return 0;
+    return rc;
 }
 
 int main(int argc, char **argv) {

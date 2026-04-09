@@ -3,3 +3,4 @@ build/
 *.ct
 *.ss
 !tests/data/bad.ct
+bench_result.*
