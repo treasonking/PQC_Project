@@ -36,6 +36,18 @@
   - 백엔드 전환/오류 처리 negative 테스트
   - CLI 입력 파일 누락/손상 실패 테스트
 
+## Benchmark Results (Example)
+
+아래 값은 로컬 Windows + w64devkit 환경에서 `mlkem-ref`로 측정한 예시다.
+
+| Algorithm | Iterations | Keygen (ms) | Encaps (ms) | Decaps (ms) |
+| --- | ---: | ---: | ---: | ---: |
+| ML-KEM-768-PQCLEAN | 100 | 0.540 | 0.500 | 0.080 |
+
+주의:
+- 측정값은 실행 환경과 부하에 따라 달라진다.
+- 절대 성능 수치보다, 같은 환경에서의 상대 비교 지표로 사용한다.
+
 ## Directory
 
 ```text
@@ -112,6 +124,12 @@ ctest --test-dir build --output-on-failure
 - 오류 로그에는 민감 데이터를 포함하지 않습니다.
 - 민감 버퍼는 `secure_memzero`로 정리합니다.
 
+## What I Learned
+
+- 암호 모듈에서는 알고리즘 정확성만큼 API 일관성과 실패 동작이 중요하다.
+- 민감 데이터가 로그나 예외 경로로 새지 않도록 초기 설계부터 규칙을 넣어야 한다.
+- 기능 구현 이후 테스트/벤치/문서를 붙여야 실제 개발 역량으로 설명 가능해진다.
+
 ## Phase 2 Notes
 
 - `src/pqc_kem.c`: 알고리즘 종속 로직(현재 dummy + PQClean ML-KEM-768) 분리
@@ -124,3 +142,10 @@ ctest --test-dir build --output-on-failure
 - 현재 암호 연산은 테스트용 더미 구현입니다.
 - `mlkem-ref`는 참조 구현 기반이며 API/테스트 목적의 통합 단계입니다.
 - 상용 보안 용도로 사용하면 안 됩니다.
+
+## Future Work
+
+- ML-DSA(서명) 백엔드 추가 및 KEM/Signature 통합 CLI 제공
+- CI(GitHub Actions)에서 빌드/테스트/정적 점검 자동화
+- Linux 실측 벤치와 Windows 실측 벤치를 같은 조건으로 비교 표준화
+- KCMVP 관점의 추가 요구사항(키 관리, 인증 경계, 운영 절차) 문서화
