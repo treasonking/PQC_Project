@@ -78,7 +78,14 @@ Windows (CMake path 지정):
 ```powershell
 set CMAKE_EXE=C:\path\to\cmake.exe
 set CC=C:\path\to\gcc.exe
+set TOOLCHAIN_BIN=C:\path\to\w64devkit\bin
 scripts\build_windows.bat
+```
+
+Windows 전체 실행(빌드+테스트+벤치):
+
+```powershell
+scripts\run_all_windows.bat
 ```
 
 ## Run

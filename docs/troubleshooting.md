@@ -26,6 +26,24 @@ Windows에서 PATH에 CMake가 없으면 절대 경로로 실행한다.
 & 'C:\path\to\cmake.exe' -S . -B build -G "MinGW Makefiles" -DCMAKE_C_COMPILER="C:\path\to\gcc.exe"
 ```
 
+Windows 배치 스크립트 사용 시:
+
+```powershell
+set TOOLCHAIN_BIN=C:\path\to\w64devkit\bin
+set CMAKE_GENERATOR=MinGW Makefiles
+set CC=C:\path\to\gcc.exe
+scripts\build_windows.bat
+```
+
+## `make` not recognized on Windows
+
+- `TOOLCHAIN_BIN`이 `w64devkit\bin`을 가리키는지 확인
+- 또는 PowerShell 세션 PATH에 직접 추가
+
+```powershell
+$env:Path='C:\path\to\w64devkit\bin;' + $env:Path
+```
+
 ## Git commit fails with author identity unknown
 
 ```powershell
