@@ -78,4 +78,24 @@ if(BUILD_TESTING)
     )
     target_link_libraries(test_negative PRIVATE pqc_module)
     add_test(NAME test_negative COMMAND test_negative)
+
+    add_executable(test_ref_kem
+        tests/test_ref_kem.c
+    )
+    target_link_libraries(test_ref_kem PRIVATE pqc_module)
+    add_test(NAME test_ref_kem COMMAND test_ref_kem)
+
+    add_test(NAME cli_help COMMAND pqc_cli --help)
+
+    add_test(
+        NAME cli_missing_input_file
+        COMMAND pqc_cli encaps --pub does_not_exist.key --ct out.ct --ss out.ss
+    )
+    set_tests_properties(cli_missing_input_file PROPERTIES WILL_FAIL TRUE)
+
+    add_test(
+        NAME cli_corrupted_key_file
+        COMMAND pqc_cli decaps --sec ${CMAKE_SOURCE_DIR}/tests/data/bad.sec --ct ${CMAKE_SOURCE_DIR}/tests/data/bad.ct --ss recovered.ss
+    )
+    set_tests_properties(cli_corrupted_key_file PROPERTIES WILL_FAIL TRUE)
 endif()

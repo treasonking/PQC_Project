@@ -2,3 +2,4 @@ build/
 *.key
 *.ct
 *.ss
+!tests/data/bad.ct

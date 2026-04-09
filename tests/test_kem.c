@@ -24,24 +24,26 @@ static int test_dummy_kem_roundtrip(void) {
         return 0;
     }
 
-    st = pqc_kem_keypair(public_key, pk, secret_key, sk);
-    if (st != PQC_OK) {
-        fprintf(stderr, "keypair failed: %s\n", pqc_status_to_string(st));
-        return 0;
-    }
-    st = pqc_kem_encaps(ciphertext, ct, ss1, ss, public_key, pk);
-    if (st != PQC_OK) {
-        fprintf(stderr, "encaps failed: %s\n", pqc_status_to_string(st));
-        return 0;
-    }
-    st = pqc_kem_decaps(ss2, ss, ciphertext, ct, secret_key, sk);
-    if (st != PQC_OK) {
-        fprintf(stderr, "decaps failed: %s\n", pqc_status_to_string(st));
-        return 0;
-    }
-    if (memcmp(ss1, ss2, ss) != 0) {
-        fprintf(stderr, "shared secret mismatch\n");
-        return 0;
+    for (int iter = 0; iter < 100; ++iter) {
+        st = pqc_kem_keypair(public_key, pk, secret_key, sk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "keypair failed: %s\n", pqc_status_to_string(st));
+            return 0;
+        }
+        st = pqc_kem_encaps(ciphertext, ct, ss1, ss, public_key, pk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "encaps failed: %s\n", pqc_status_to_string(st));
+            return 0;
+        }
+        st = pqc_kem_decaps(ss2, ss, ciphertext, ct, secret_key, sk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "decaps failed: %s\n", pqc_status_to_string(st));
+            return 0;
+        }
+        if (memcmp(ss1, ss2, ss) != 0) {
+            fprintf(stderr, "shared secret mismatch on iter %d\n", iter);
+            return 0;
+        }
     }
 
     ciphertext[ct - 1] ^= 0x01;

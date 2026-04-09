@@ -322,10 +322,11 @@ static int handle_benchmark(int argc, char **argv) {
     decaps_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
 
     printf("benchmark iterations=%d\n", iterations);
+    printf("algorithm=%s\n", pqc_get_algorithm_name());
     printf("avg_keygen_ms=%.3f\n", keygen_ms);
     printf("avg_encaps_ms=%.3f\n", encaps_ms);
     printf("avg_decaps_ms=%.3f\n", decaps_ms);
-    printf("note=dummy_implementation_for_phase1\n");
+    printf("note=development_benchmark_not_for_production\n");
 
     secure_memzero(sec, sk);
     secure_memzero(shared_secret, ss);
