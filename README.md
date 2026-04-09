@@ -2,8 +2,8 @@
 
 개인 학습 프로젝트로, C 기반의 PQC(KEM) 모듈 구조를 설계하고 CLI, 테스트, 벤치마크를 함께 구성하는 것을 목표로 합니다.
 
-현재 단계는 **Phase 1 완료 + Phase 2 준비 구조 반영** 상태입니다.
-실제 ML-KEM 연동 전에 공통 API/오류 처리/CLI 뼈대를 안정화하고, 알고리즘 종속 로직 분리 구조를 먼저 적용했습니다.
+현재 단계는 **Phase 1 완료 + Phase 2(ML-KEM 참조 구현 연결) 진행** 상태입니다.
+공통 API/오류 처리/CLI 뼈대를 유지한 채, `mlkem-ref` 백엔드를 PQClean 기반 구현으로 연결했습니다.
 
 ## Why
 
@@ -55,6 +55,7 @@ pqc-crypto-module-lab/
   │   ├─ benchmark_kem.c
   │   └─ parse_results.py
   ├─ third_party/
+  │   ├─ mlkem_pqclean/
   │   └─ README.md
   └─ scripts/
       ├─ build_linux.sh
@@ -100,15 +101,15 @@ ctest --test-dir build --output-on-failure
 - 오류 로그에는 민감 데이터를 포함하지 않습니다.
 - 민감 버퍼는 `secure_memzero`로 정리합니다.
 
-## Phase 2 Prep Notes
+## Phase 2 Notes
 
-- `src/pqc_kem.c`: 알고리즘 종속 로직(현재 dummy + ref placeholder) 분리
+- `src/pqc_kem.c`: 알고리즘 종속 로직(현재 dummy + PQClean ML-KEM-768) 분리
 - `src/pqc_module.c`: 공통 API 엔트리(backend 라우팅)
-- `third_party/`: 외부 참조 구현 연결 위치 명시
+- `third_party/mlkem_pqclean`: 참조 구현 vendor 파일
 - 향후 ML-DSA 추가 시 같은 패턴으로 `*_backend` 구조 확장 가능
 
 ## Limitations
 
 - 현재 암호 연산은 테스트용 더미 구현입니다.
+- `mlkem-ref`는 참조 구현 기반이며 API/테스트 목적의 통합 단계입니다.
 - 상용 보안 용도로 사용하면 안 됩니다.
-- 다음 단계에서 ML-KEM 참조 구현을 `third_party` 경로로 연동할 예정입니다.

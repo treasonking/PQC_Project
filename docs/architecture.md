@@ -14,7 +14,7 @@
   - 활성 백엔드로 라우팅
 - `src/pqc_kem.c`
   - 알고리즘 종속 계층
-  - 현재 `dummy` 구현 + `mlkem-ref` 연결용 placeholder
+  - 현재 `dummy` 구현 + `mlkem-ref(PQClean ML-KEM-768 clean)` 구현
 - `src/pqc_utils.c`
   - 보안 메모리 정리(`secure_memzero`), 상태 문자열 변환
 - `src/main.c`
@@ -23,7 +23,7 @@
 ## Backend Strategy
 
 - 기본 백엔드: `PQC_ALG_ML_KEM_768_DUMMY`
-- 예정 백엔드: `PQC_ALG_ML_KEM_768_REF`
+- 참조 백엔드: `PQC_ALG_ML_KEM_768_REF` (PQClean)
 - 향후 확장: ML-DSA 등 추가 시 동일한 패턴으로 분리
 
 ## Security Rules

@@ -2,14 +2,13 @@
 
 This directory is reserved for external PQC reference implementations.
 
-Recommended layout for ML-KEM integration:
+Current layout:
 
 ```text
 third_party/
-  mlkem/
-    include/
-    src/
-    LICENSE
+  mlkem_pqclean/
+    clean/      # PQClean ML-KEM-768 clean implementation files
+    common/     # required common primitives (fips202, randombytes)
 ```
 
 Integration policy:

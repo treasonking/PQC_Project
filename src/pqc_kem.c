@@ -5,6 +5,10 @@
 #include <string.h>
 #include <time.h>
 
+#if PQC_ENABLE_MLKEM_REF
+#include "api.h"
+#endif
+
 enum {
     DUMMY_PUBLIC_KEY_SIZE = 800,
     DUMMY_SECRET_KEY_SIZE = 1632,
@@ -160,6 +164,67 @@ static pqc_status_t ref_not_connected_decaps(uint8_t *shared_secret,
     return PQC_ERR_INTERNAL;
 }
 
+#if PQC_ENABLE_MLKEM_REF
+static pqc_status_t ref_mlkem_keypair(uint8_t *public_key,
+                                      size_t public_key_len,
+                                      uint8_t *secret_key,
+                                      size_t secret_key_len) {
+    if (public_key == NULL || secret_key == NULL) {
+        return PQC_ERR_INVALID_ARG;
+    }
+    if (public_key_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_PUBLICKEYBYTES ||
+        secret_key_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_SECRETKEYBYTES) {
+        return PQC_ERR_BUFFER_TOO_SMALL;
+    }
+    if (PQCLEAN_MLKEM768_CLEAN_crypto_kem_keypair(public_key, secret_key) != 0) {
+        return PQC_ERR_KEYGEN_FAILED;
+    }
+    return PQC_OK;
+}
+
+static pqc_status_t ref_mlkem_encaps(uint8_t *ciphertext,
+                                     size_t ciphertext_len,
+                                     uint8_t *shared_secret,
+                                     size_t shared_secret_len,
+                                     const uint8_t *public_key,
+                                     size_t public_key_len) {
+    if (ciphertext == NULL || shared_secret == NULL || public_key == NULL) {
+        return PQC_ERR_INVALID_ARG;
+    }
+    if (ciphertext_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_CIPHERTEXTBYTES ||
+        shared_secret_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_BYTES ||
+        public_key_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_PUBLICKEYBYTES) {
+        return PQC_ERR_BUFFER_TOO_SMALL;
+    }
+    if (PQCLEAN_MLKEM768_CLEAN_crypto_kem_enc(ciphertext, shared_secret, public_key) != 0) {
+        secure_memzero(shared_secret, shared_secret_len);
+        return PQC_ERR_ENCAP_FAILED;
+    }
+    return PQC_OK;
+}
+
+static pqc_status_t ref_mlkem_decaps(uint8_t *shared_secret,
+                                     size_t shared_secret_len,
+                                     const uint8_t *ciphertext,
+                                     size_t ciphertext_len,
+                                     const uint8_t *secret_key,
+                                     size_t secret_key_len) {
+    if (shared_secret == NULL || ciphertext == NULL || secret_key == NULL) {
+        return PQC_ERR_INVALID_ARG;
+    }
+    if (shared_secret_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_BYTES ||
+        ciphertext_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_CIPHERTEXTBYTES ||
+        secret_key_len < PQCLEAN_MLKEM768_CLEAN_CRYPTO_SECRETKEYBYTES) {
+        return PQC_ERR_BUFFER_TOO_SMALL;
+    }
+    if (PQCLEAN_MLKEM768_CLEAN_crypto_kem_dec(shared_secret, ciphertext, secret_key) != 0) {
+        secure_memzero(shared_secret, shared_secret_len);
+        return PQC_ERR_DECAP_FAILED;
+    }
+    return PQC_OK;
+}
+#endif
+
 static const pqc_kem_backend_t DUMMY_BACKEND = {
     "DUMMY-ML-KEM-API",
     DUMMY_PUBLIC_KEY_SIZE,
@@ -170,6 +235,17 @@ static const pqc_kem_backend_t DUMMY_BACKEND = {
     dummy_encaps,
     dummy_decaps};
 
+#if PQC_ENABLE_MLKEM_REF
+static const pqc_kem_backend_t REF_BACKEND = {
+    "ML-KEM-768-PQCLEAN",
+    PQCLEAN_MLKEM768_CLEAN_CRYPTO_PUBLICKEYBYTES,
+    PQCLEAN_MLKEM768_CLEAN_CRYPTO_SECRETKEYBYTES,
+    PQCLEAN_MLKEM768_CLEAN_CRYPTO_CIPHERTEXTBYTES,
+    PQCLEAN_MLKEM768_CLEAN_CRYPTO_BYTES,
+    ref_mlkem_keypair,
+    ref_mlkem_encaps,
+    ref_mlkem_decaps};
+#else
 static const pqc_kem_backend_t REF_BACKEND_PLACEHOLDER = {
     "ML-KEM-REF-NOT-CONNECTED",
     DUMMY_PUBLIC_KEY_SIZE,
@@ -179,10 +255,15 @@ static const pqc_kem_backend_t REF_BACKEND_PLACEHOLDER = {
     ref_not_connected_keypair,
     ref_not_connected_encaps,
     ref_not_connected_decaps};
+#endif
 
 const pqc_kem_backend_t *pqc_kem_get_backend(void) {
     if (g_active_algorithm == PQC_ALG_ML_KEM_768_REF) {
+#if PQC_ENABLE_MLKEM_REF
+        return &REF_BACKEND;
+#else
         return &REF_BACKEND_PLACEHOLDER;
+#endif
     }
     return &DUMMY_BACKEND;
 }
