@@ -118,6 +118,16 @@ scripts\run_all_windows.bat
 ctest --test-dir build --output-on-failure
 ```
 
+## CI
+
+GitHub Actions CI는 `main` push와 PR에서 아래를 자동 수행한다.
+
+- Ubuntu: configure/build/test + mlkem-ref smoke run
+- Windows(MSYS2 MinGW): configure/build/test + mlkem-ref smoke run
+
+워크플로 파일:
+- `.github/workflows/ci.yml`
+
 ## Security Note
 
 - 데모 단계에서도 비밀키/공유비밀을 콘솔에 출력하지 않습니다.
