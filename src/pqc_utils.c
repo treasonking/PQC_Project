@@ -21,6 +21,8 @@ const char *pqc_status_to_string(pqc_status_t status) {
             return "PQC_ERR_BUFFER_TOO_SMALL";
         case PQC_ERR_KEYGEN_FAILED:
             return "PQC_ERR_KEYGEN_FAILED";
+        case PQC_ERR_SIGN_FAILED:
+            return "PQC_ERR_SIGN_FAILED";
         case PQC_ERR_ENCAP_FAILED:
             return "PQC_ERR_ENCAP_FAILED";
         case PQC_ERR_DECAP_FAILED:

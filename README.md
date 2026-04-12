@@ -24,8 +24,11 @@
   - `help`
   - `info`
   - `keygen`
+  - `sig-keygen`
   - `encaps`
   - `decaps`
+  - `sign`
+  - `verify`
   - `benchmark` (더미)
   - `--alg <dummy|mlkem-ref>` 옵션
 - 테스트
@@ -65,7 +68,9 @@ pqc-crypto-module-lab/
   │   └─ main.c
   ├─ tests/
   │   ├─ test_kem.c
-  │   └─ test_negative.c
+  │   ├─ test_negative.c
+  │   ├─ test_ref_kem.c
+  │   └─ test_sig.c
   ├─ bench/
   │   ├─ benchmark_kem.c
   │   └─ parse_results.py
@@ -106,8 +111,11 @@ scripts\run_all_windows.bat
 ./build/pqc_cli --help
 ./build/pqc_cli info
 ./build/pqc_cli keygen --pub pub.key --sec sec.key
+./build/pqc_cli sig-keygen --pub sig_pub.key --sec sig_sec.key
 ./build/pqc_cli encaps --pub pub.key --ct out.ct --ss out.ss
 ./build/pqc_cli decaps --sec sec.key --ct out.ct --ss recovered.ss
+./build/pqc_cli sign --sec sig_sec.key --msg message.txt --sig message.sig
+./build/pqc_cli verify --pub sig_pub.key --msg message.txt --sig message.sig
 ./build/pqc_cli benchmark --iterations 1000
 ./build/pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.csv
 ```

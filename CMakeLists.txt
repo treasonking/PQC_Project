@@ -8,6 +8,7 @@ set(CMAKE_C_EXTENSIONS OFF)
 set(PQC_MODULE_SOURCES
     src/pqc_module.c
     src/pqc_kem.c
+    src/pqc_sig.c
     src/pqc_utils.c
 )
 
@@ -84,6 +85,12 @@ if(BUILD_TESTING)
     )
     target_link_libraries(test_ref_kem PRIVATE pqc_module)
     add_test(NAME test_ref_kem COMMAND test_ref_kem)
+
+    add_executable(test_sig
+        tests/test_sig.c
+    )
+    target_link_libraries(test_sig PRIVATE pqc_module)
+    add_test(NAME test_sig COMMAND test_sig)
 
     add_test(NAME cli_help COMMAND pqc_cli --help)
 

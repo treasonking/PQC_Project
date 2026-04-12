@@ -13,6 +13,7 @@ typedef enum {
     PQC_ERR_INVALID_ARG,
     PQC_ERR_BUFFER_TOO_SMALL,
     PQC_ERR_KEYGEN_FAILED,
+    PQC_ERR_SIGN_FAILED,
     PQC_ERR_ENCAP_FAILED,
     PQC_ERR_DECAP_FAILED,
     PQC_ERR_VERIFY_FAILED,
@@ -23,6 +24,10 @@ typedef enum {
     PQC_ALG_ML_KEM_768_DUMMY = 0,
     PQC_ALG_ML_KEM_768_REF = 1
 } pqc_algorithm_t;
+
+typedef enum {
+    PQC_SIG_ALG_ML_DSA_65_DUMMY = 0
+} pqc_sig_algorithm_t;
 
 /* Select the active KEM backend (default: PQC_ALG_ML_KEM_768_DUMMY). */
 pqc_status_t pqc_set_algorithm(pqc_algorithm_t algorithm);
@@ -52,6 +57,33 @@ pqc_status_t pqc_kem_decaps(uint8_t *shared_secret,
                             size_t ciphertext_len,
                             const uint8_t *secret_key,
                             size_t secret_key_len);
+
+pqc_status_t pqc_set_signature_algorithm(pqc_sig_algorithm_t algorithm);
+pqc_sig_algorithm_t pqc_get_signature_algorithm(void);
+const char *pqc_get_signature_algorithm_name(void);
+
+void pqc_sig_get_sizes(size_t *public_key_size,
+                       size_t *secret_key_size,
+                       size_t *signature_size);
+
+pqc_status_t pqc_sig_keypair(uint8_t *public_key,
+                             size_t public_key_len,
+                             uint8_t *secret_key,
+                             size_t secret_key_len);
+
+pqc_status_t pqc_sig_sign(uint8_t *signature,
+                          size_t signature_len,
+                          const uint8_t *message,
+                          size_t message_len,
+                          const uint8_t *secret_key,
+                          size_t secret_key_len);
+
+pqc_status_t pqc_sig_verify(const uint8_t *signature,
+                            size_t signature_len,
+                            const uint8_t *message,
+                            size_t message_len,
+                            const uint8_t *public_key,
+                            size_t public_key_len);
 
 void secure_memzero(void *ptr, size_t len);
 const char *pqc_status_to_string(pqc_status_t status);

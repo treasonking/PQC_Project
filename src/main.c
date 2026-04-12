@@ -89,8 +89,11 @@ static void print_usage(const char *prog) {
     printf("  %s help\n", prog);
     printf("  %s info\n", prog);
     printf("  %s keygen --pub <file> --sec <file>\n", prog);
+    printf("  %s sig-keygen --pub <file> --sec <file>\n", prog);
     printf("  %s encaps --pub <file> --ct <file> --ss <file>\n", prog);
     printf("  %s decaps --sec <file> --ct <file> --ss <file>\n", prog);
+    printf("  %s sign --sec <file> --msg <file> --sig <file>\n", prog);
+    printf("  %s verify --pub <file> --msg <file> --sig <file>\n", prog);
     printf("  %s benchmark --iterations <N> [--out <result.txt|result.csv>]\n", prog);
     printf("Options:\n");
     printf("  --alg <dummy|mlkem-ref>\n");
@@ -160,14 +163,63 @@ static int read_binary_file(const char *path, uint8_t *data, size_t len) {
     return read_size == len;
 }
 
+static int read_binary_file_dynamic(const char *path, uint8_t **data, size_t *len) {
+    FILE *fp;
+    long sz;
+    uint8_t *buf;
+    size_t read_size;
+    if (path == NULL || data == NULL || len == NULL) {
+        return 0;
+    }
+    *data = NULL;
+    *len = 0;
+    fp = fopen(path, "rb");
+    if (fp == NULL) {
+        return 0;
+    }
+    if (fseek(fp, 0, SEEK_END) != 0) {
+        fclose(fp);
+        return 0;
+    }
+    sz = ftell(fp);
+    if (sz < 0) {
+        fclose(fp);
+        return 0;
+    }
+    if (fseek(fp, 0, SEEK_SET) != 0) {
+        fclose(fp);
+        return 0;
+    }
+    buf = (uint8_t *)malloc((size_t)sz);
+    if (buf == NULL && sz > 0) {
+        fclose(fp);
+        return 0;
+    }
+    read_size = fread(buf, 1, (size_t)sz, fp);
+    fclose(fp);
+    if (read_size != (size_t)sz) {
+        free(buf);
+        return 0;
+    }
+    *data = buf;
+    *len = (size_t)sz;
+    return 1;
+}
+
 static int handle_info(void) {
     size_t pk, sk, ct, ss;
+    size_t spk, ssk, sig;
     pqc_get_sizes(&pk, &sk, &ct, &ss);
+    pqc_sig_get_sizes(&spk, &ssk, &sig);
     printf("Algorithm: %s\n", pqc_get_algorithm_name());
     printf("public_key_size=%zu\n", pk);
     printf("secret_key_size=%zu\n", sk);
     printf("ciphertext_size=%zu\n", ct);
     printf("shared_secret_size=%zu\n", ss);
+    printf("signature_algorithm=%s\n", pqc_get_signature_algorithm_name());
+    printf("sig_public_key_size=%zu\n", spk);
+    printf("sig_secret_key_size=%zu\n", ssk);
+    printf("signature_size=%zu\n", sig);
     return 0;
 }
 
@@ -266,6 +318,48 @@ done:
     return ok ? 0 : 1;
 }
 
+static int handle_sig_keygen(int argc, char **argv) {
+    const char *pub_path = arg_value(argc, argv, "--pub");
+    const char *sec_path = arg_value(argc, argv, "--sec");
+    size_t pk, sk, sig_size_unused;
+    uint8_t *pub = NULL;
+    uint8_t *sec = NULL;
+    pqc_status_t st;
+    int ok = 1;
+    (void)sig_size_unused;
+
+    if (pub_path == NULL || sec_path == NULL) {
+        fprintf(stderr, "sig-keygen requires --pub and --sec\n");
+        return 1;
+    }
+
+    pqc_sig_get_sizes(&pk, &sk, &sig_size_unused);
+    pub = (uint8_t *)malloc(pk);
+    sec = (uint8_t *)malloc(sk);
+    if (pub == NULL || sec == NULL) {
+        fprintf(stderr, "memory allocation failed\n");
+        free(pub);
+        free(sec);
+        return 1;
+    }
+
+    st = pqc_sig_keypair(pub, pk, sec, sk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "sig-keygen failed: %s\n", pqc_status_to_string(st));
+        ok = 0;
+    } else if (!write_binary_file(pub_path, pub, pk) || !write_binary_file(sec_path, sec, sk)) {
+        fprintf(stderr, "failed to write signature key files\n");
+        ok = 0;
+    } else {
+        printf("sig-keygen ok\n");
+    }
+
+    secure_memzero(sec, sk);
+    free(pub);
+    free(sec);
+    return ok ? 0 : 1;
+}
+
 static int handle_decaps(int argc, char **argv) {
     const char *sec_path = arg_value(argc, argv, "--sec");
     const char *ct_path = arg_value(argc, argv, "--ct");
@@ -318,6 +412,123 @@ done:
     free(sec);
     free(ciphertext);
     free(shared_secret);
+    return ok ? 0 : 1;
+}
+
+static int handle_sign(int argc, char **argv) {
+    const char *sec_path = arg_value(argc, argv, "--sec");
+    const char *msg_path = arg_value(argc, argv, "--msg");
+    const char *sig_path = arg_value(argc, argv, "--sig");
+    size_t sk, sig_len, pk_unused;
+    uint8_t *sec = NULL;
+    uint8_t *msg = NULL;
+    uint8_t *sig = NULL;
+    size_t msg_len = 0;
+    pqc_status_t st;
+    int ok = 1;
+    (void)pk_unused;
+
+    if (sec_path == NULL || msg_path == NULL || sig_path == NULL) {
+        fprintf(stderr, "sign requires --sec, --msg and --sig\n");
+        return 1;
+    }
+
+    pqc_sig_get_sizes(&pk_unused, &sk, &sig_len);
+    sec = (uint8_t *)malloc(sk);
+    sig = (uint8_t *)malloc(sig_len);
+    if (sec == NULL || sig == NULL) {
+        fprintf(stderr, "memory allocation failed\n");
+        ok = 0;
+        goto done;
+    }
+    if (!read_binary_file(sec_path, sec, sk)) {
+        fprintf(stderr, "failed to read signature secret key file\n");
+        ok = 0;
+        goto done;
+    }
+    if (!read_binary_file_dynamic(msg_path, &msg, &msg_len)) {
+        fprintf(stderr, "failed to read message file\n");
+        ok = 0;
+        goto done;
+    }
+
+    st = pqc_sig_sign(sig, sig_len, msg, msg_len, sec, sk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "sign failed: %s\n", pqc_status_to_string(st));
+        ok = 0;
+        goto done;
+    }
+    if (!write_binary_file(sig_path, sig, sig_len)) {
+        fprintf(stderr, "failed to write signature file\n");
+        ok = 0;
+        goto done;
+    }
+    printf("sign ok\n");
+
+done:
+    secure_memzero(sec, sk);
+    secure_memzero(sig, sig_len);
+    free(sec);
+    free(msg);
+    free(sig);
+    return ok ? 0 : 1;
+}
+
+static int handle_verify(int argc, char **argv) {
+    const char *pub_path = arg_value(argc, argv, "--pub");
+    const char *msg_path = arg_value(argc, argv, "--msg");
+    const char *sig_path = arg_value(argc, argv, "--sig");
+    size_t pk, sk_unused, sig_len;
+    uint8_t *pub = NULL;
+    uint8_t *msg = NULL;
+    uint8_t *sig = NULL;
+    size_t msg_len = 0;
+    pqc_status_t st;
+    int ok = 1;
+    (void)sk_unused;
+
+    if (pub_path == NULL || msg_path == NULL || sig_path == NULL) {
+        fprintf(stderr, "verify requires --pub, --msg and --sig\n");
+        return 1;
+    }
+
+    pqc_sig_get_sizes(&pk, &sk_unused, &sig_len);
+    pub = (uint8_t *)malloc(pk);
+    sig = (uint8_t *)malloc(sig_len);
+    if (pub == NULL || sig == NULL) {
+        fprintf(stderr, "memory allocation failed\n");
+        ok = 0;
+        goto done;
+    }
+    if (!read_binary_file(pub_path, pub, pk)) {
+        fprintf(stderr, "failed to read signature public key file\n");
+        ok = 0;
+        goto done;
+    }
+    if (!read_binary_file(sig_path, sig, sig_len)) {
+        fprintf(stderr, "failed to read signature file\n");
+        ok = 0;
+        goto done;
+    }
+    if (!read_binary_file_dynamic(msg_path, &msg, &msg_len)) {
+        fprintf(stderr, "failed to read message file\n");
+        ok = 0;
+        goto done;
+    }
+
+    st = pqc_sig_verify(sig, sig_len, msg, msg_len, pub, pk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "verify failed: %s\n", pqc_status_to_string(st));
+        ok = 0;
+        goto done;
+    }
+
+    printf("verify ok\n");
+
+done:
+    free(pub);
+    free(msg);
+    free(sig);
     return ok ? 0 : 1;
 }
 
@@ -455,11 +666,20 @@ int main(int argc, char **argv) {
     if (strcmp(cmd, "keygen") == 0) {
         return handle_keygen(argc - 1, argv + 1);
     }
+    if (strcmp(cmd, "sig-keygen") == 0) {
+        return handle_sig_keygen(argc - 1, argv + 1);
+    }
     if (strcmp(cmd, "encaps") == 0) {
         return handle_encaps(argc - 1, argv + 1);
     }
     if (strcmp(cmd, "decaps") == 0) {
         return handle_decaps(argc - 1, argv + 1);
+    }
+    if (strcmp(cmd, "sign") == 0) {
+        return handle_sign(argc - 1, argv + 1);
+    }
+    if (strcmp(cmd, "verify") == 0) {
+        return handle_verify(argc - 1, argv + 1);
     }
     if (strcmp(cmd, "benchmark") == 0) {
         return handle_benchmark(argc - 1, argv + 1);
