@@ -2,6 +2,7 @@
 
 [![CI](https://github.com/treasonking/PQC_Project/actions/workflows/ci.yml/badge.svg)](https://github.com/treasonking/PQC_Project/actions/workflows/ci.yml)
 [![Quality](https://github.com/treasonking/PQC_Project/actions/workflows/quality.yml/badge.svg)](https://github.com/treasonking/PQC_Project/actions/workflows/quality.yml)
+[![CodeQL](https://github.com/treasonking/PQC_Project/actions/workflows/codeql.yml/badge.svg)](https://github.com/treasonking/PQC_Project/actions/workflows/codeql.yml)
 
 C 기반 PQC 모듈 개인 프로젝트입니다.  
 목표는 **KEM + Signature를 공통 API/CLI/테스트/벤치마크/문서화까지 연결**해서 실제 개발 역량을 보여주는 것입니다.
@@ -112,7 +113,8 @@ pqc-crypto-module-lab/
   │   └─ run_all_windows.bat
   └─ .github/workflows/
       ├─ ci.yml
-      └─ quality.yml
+      ├─ quality.yml
+      └─ codeql.yml
 ```
 
 ## Build
@@ -191,6 +193,9 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 정적 점검 (`.github/workflows/quality.yml`):
 - `cppcheck` 실행 (warning/style/performance/portability)
+
+보안 점검 (`.github/workflows/codeql.yml`):
+- CodeQL C/C++ 분석 (push/PR + 주간 스케줄)
 
 ## Portfolio Metadata (Recommended)
 
