@@ -26,7 +26,8 @@ typedef enum {
 } pqc_algorithm_t;
 
 typedef enum {
-    PQC_SIG_ALG_ML_DSA_65_DUMMY = 0
+    PQC_SIG_ALG_ML_DSA_65_DUMMY = 0,
+    PQC_SIG_ALG_ML_DSA_65_REF = 1
 } pqc_sig_algorithm_t;
 
 /* Select the active KEM backend (default: PQC_ALG_ML_KEM_768_DUMMY). */

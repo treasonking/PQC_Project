@@ -31,6 +31,7 @@
   - `verify`
   - `benchmark` (더미)
   - `--alg <dummy|mlkem-ref>` 옵션
+  - `--sig-alg <dummy-dsa|mldsa-ref>` 옵션
 - 테스트
   - 더미 KEM 라운드트립 검증
   - 참조 ML-KEM 라운드트립 검증
@@ -76,6 +77,7 @@ pqc-crypto-module-lab/
   │   └─ parse_results.py
   ├─ third_party/
   │   ├─ mlkem_pqclean/
+  │   ├─ mldsa_pqclean/
   │   └─ README.md
   └─ scripts/
       ├─ build_linux.sh
@@ -112,6 +114,7 @@ scripts\run_all_windows.bat
 ./build/pqc_cli info
 ./build/pqc_cli keygen --pub pub.key --sec sec.key
 ./build/pqc_cli sig-keygen --pub sig_pub.key --sec sig_sec.key
+./build/pqc_cli sig-keygen --sig-alg mldsa-ref --pub sig_pub.key --sec sig_sec.key
 ./build/pqc_cli encaps --pub pub.key --ct out.ct --ss out.ss
 ./build/pqc_cli decaps --sec sec.key --ct out.ct --ss recovered.ss
 ./build/pqc_cli sign --sec sig_sec.key --msg message.txt --sig message.sig

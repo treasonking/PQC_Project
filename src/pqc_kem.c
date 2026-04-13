@@ -6,7 +6,7 @@
 #include <time.h>
 
 #if PQC_ENABLE_MLKEM_REF
-#include "api.h"
+#include "mlkem_pqclean/clean/api.h"
 #endif
 
 enum {

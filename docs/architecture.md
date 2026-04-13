@@ -23,7 +23,7 @@
   - 현재 `dummy` 구현 + `mlkem-ref(PQClean ML-KEM-768 clean)` 구현
 - `src/pqc_sig.c`
   - 서명 알고리즘 종속 계층
-  - 현재 `dummy-ml-dsa` 구현
+  - 현재 `dummy-ml-dsa` + `mldsa-ref(PQClean ML-DSA-65 clean)` 구현
 - `src/pqc_utils.c`
   - 보안 메모리 정리(`secure_memzero`), 상태 문자열 변환
 - `src/main.c`
@@ -34,6 +34,7 @@
 - 기본 백엔드: `PQC_ALG_ML_KEM_768_DUMMY`
 - 참조 백엔드: `PQC_ALG_ML_KEM_768_REF` (PQClean)
 - 서명 백엔드: `PQC_SIG_ALG_ML_DSA_65_DUMMY`
+- 서명 참조 백엔드: `PQC_SIG_ALG_ML_DSA_65_REF` (PQClean)
 - 향후 확장: ML-DSA 등 추가 시 동일한 패턴으로 분리
 
 ## Security Rules

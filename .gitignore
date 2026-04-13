@@ -2,5 +2,6 @@ build/
 *.key
 *.ct
 *.ss
+*.sig
 !tests/data/bad.ct
 bench_result.*

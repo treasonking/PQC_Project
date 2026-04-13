@@ -4,7 +4,7 @@
 #include <stdlib.h>
 #include <string.h>
 
-int main(void) {
+static int run_sign_verify_once(void) {
     size_t pk, sk, sig_len;
     uint8_t *pub = NULL;
     uint8_t *sec = NULL;
@@ -51,6 +51,24 @@ int main(void) {
     free(pub);
     free(sec);
     free(sig);
+
+    return 0;
+}
+
+int main(void) {
+    if (pqc_set_signature_algorithm(PQC_SIG_ALG_ML_DSA_65_DUMMY) != PQC_OK) {
+        fprintf(stderr, "failed to set dummy sig algorithm\n");
+        return 1;
+    }
+    if (run_sign_verify_once() != 0) {
+        return 1;
+    }
+
+    if (pqc_set_signature_algorithm(PQC_SIG_ALG_ML_DSA_65_REF) == PQC_OK) {
+        if (run_sign_verify_once() != 0) {
+            return 1;
+        }
+    }
 
     printf("sig tests passed\n");
     return 0;

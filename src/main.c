@@ -97,6 +97,7 @@ static void print_usage(const char *prog) {
     printf("  %s benchmark --iterations <N> [--out <result.txt|result.csv>]\n", prog);
     printf("Options:\n");
     printf("  --alg <dummy|mlkem-ref>\n");
+    printf("  --sig-alg <dummy-dsa|mldsa-ref>\n");
 }
 
 static const char *arg_value(int argc, char **argv, const char *name) {
@@ -126,6 +127,28 @@ static int maybe_set_algorithm_from_args(int argc, char **argv) {
     }
     if (st != PQC_OK) {
         fprintf(stderr, "failed to set algorithm: %s\n", pqc_status_to_string(st));
+        return 1;
+    }
+    return 0;
+}
+
+static int maybe_set_signature_algorithm_from_args(int argc, char **argv) {
+    const char *alg = arg_value(argc, argv, "--sig-alg");
+    pqc_status_t st;
+
+    if (alg == NULL) {
+        return 0;
+    }
+    if (strcmp(alg, "dummy-dsa") == 0) {
+        st = pqc_set_signature_algorithm(PQC_SIG_ALG_ML_DSA_65_DUMMY);
+    } else if (strcmp(alg, "mldsa-ref") == 0) {
+        st = pqc_set_signature_algorithm(PQC_SIG_ALG_ML_DSA_65_REF);
+    } else {
+        fprintf(stderr, "unsupported --sig-alg value: %s\n", alg);
+        return 1;
+    }
+    if (st != PQC_OK) {
+        fprintf(stderr, "failed to set signature algorithm: %s\n", pqc_status_to_string(st));
         return 1;
     }
     return 0;
@@ -654,6 +677,9 @@ int main(int argc, char **argv) {
 
     cmd = argv[1];
     if (maybe_set_algorithm_from_args(argc, argv) != 0) {
+        return 1;
+    }
+    if (maybe_set_signature_algorithm_from_args(argc, argv) != 0) {
         return 1;
     }
     if (strcmp(cmd, "help") == 0 || strcmp(cmd, "--help") == 0 || strcmp(cmd, "-h") == 0) {

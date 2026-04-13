@@ -13,6 +13,7 @@ set(PQC_MODULE_SOURCES
 )
 
 set(PQCLEAN_MLKEM768_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mlkem_pqclean/clean")
+set(PQCLEAN_MLDSA65_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mldsa_pqclean/clean")
 set(PQCLEAN_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mlkem_pqclean/common")
 
 if(EXISTS "${PQCLEAN_MLKEM768_DIR}/api.h" AND EXISTS "${PQCLEAN_COMMON_DIR}/fips202.c")
@@ -36,6 +37,24 @@ else()
     set(PQC_ENABLE_MLKEM_REF_VALUE 0)
 endif()
 
+if(EXISTS "${PQCLEAN_MLDSA65_DIR}/api.h")
+    message(STATUS "Enabling PQClean ML-DSA-65 reference backend")
+    list(APPEND PQC_MODULE_SOURCES
+        "${PQCLEAN_MLDSA65_DIR}/ntt.c"
+        "${PQCLEAN_MLDSA65_DIR}/packing.c"
+        "${PQCLEAN_MLDSA65_DIR}/poly.c"
+        "${PQCLEAN_MLDSA65_DIR}/polyvec.c"
+        "${PQCLEAN_MLDSA65_DIR}/reduce.c"
+        "${PQCLEAN_MLDSA65_DIR}/rounding.c"
+        "${PQCLEAN_MLDSA65_DIR}/sign.c"
+        "${PQCLEAN_MLDSA65_DIR}/symmetric-shake.c"
+    )
+    set(PQC_ENABLE_MLDSA_REF_VALUE 1)
+else()
+    message(STATUS "PQClean ML-DSA-65 not found; building with dummy signature backend only")
+    set(PQC_ENABLE_MLDSA_REF_VALUE 0)
+endif()
+
 add_library(pqc_module
     ${PQC_MODULE_SOURCES}
 )
@@ -47,10 +66,12 @@ target_include_directories(pqc_module
         ${CMAKE_CURRENT_SOURCE_DIR}/src
         ${CMAKE_CURRENT_SOURCE_DIR}/third_party
         ${PQCLEAN_MLKEM768_DIR}
+        ${PQCLEAN_MLDSA65_DIR}
         ${PQCLEAN_COMMON_DIR}
 )
 
 target_compile_definitions(pqc_module PRIVATE PQC_ENABLE_MLKEM_REF=${PQC_ENABLE_MLKEM_REF_VALUE})
+target_compile_definitions(pqc_module PRIVATE PQC_ENABLE_MLDSA_REF=${PQC_ENABLE_MLDSA_REF_VALUE})
 if(WIN32 AND PQC_ENABLE_MLKEM_REF_VALUE)
     target_link_libraries(pqc_module PRIVATE Advapi32)
 endif()

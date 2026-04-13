@@ -9,6 +9,8 @@ third_party/
   mlkem_pqclean/
     clean/      # PQClean ML-KEM-768 clean implementation files
     common/     # required common primitives (fips202, randombytes)
+  mldsa_pqclean/
+    clean/      # PQClean ML-DSA-65 clean implementation files
 ```
 
 Integration policy:
