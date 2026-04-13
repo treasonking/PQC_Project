@@ -13,10 +13,10 @@ if errorlevel 1 exit /b 1
 "%CTEST_EXE%" --test-dir "%BUILD_DIR%" --output-on-failure
 if errorlevel 1 exit /b 1
 
-"%BUILD_DIR%\pqc_cli.exe" info --alg mlkem-ref
+"%BUILD_DIR%\pqc_cli.exe" info --alg mlkem-ref --sig-alg mldsa-ref
 if errorlevel 1 exit /b 1
 
-"%BUILD_DIR%\pqc_cli.exe" benchmark --alg mlkem-ref --iterations 100 --out bench_result.csv
+"%BUILD_DIR%\pqc_cli.exe" benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 100 --out bench_result.csv
 if errorlevel 1 exit /b 1
 
 echo [OK] run_all_windows complete

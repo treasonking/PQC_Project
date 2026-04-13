@@ -28,8 +28,8 @@ jobs:
 
       - name: Smoke run
         run: |
-          ./build/pqc_cli info --alg mlkem-ref
-          ./build/pqc_cli benchmark --alg mlkem-ref --iterations 50 --out bench_result.csv
+          ./build/pqc_cli info --alg mlkem-ref --sig-alg mldsa-ref
+          ./build/pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv
 
   windows:
     runs-on: windows-latest
@@ -60,5 +60,5 @@ jobs:
 
       - name: Smoke run
         run: |
-          ./build/pqc_cli.exe info --alg mlkem-ref
-          ./build/pqc_cli.exe benchmark --alg mlkem-ref --iterations 50 --out bench_result.csv
+          ./build/pqc_cli.exe info --alg mlkem-ref --sig-alg mldsa-ref
+          ./build/pqc_cli.exe benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv

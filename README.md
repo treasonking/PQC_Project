@@ -133,8 +133,8 @@ ctest --test-dir build --output-on-failure
 
 GitHub Actions CI는 `main` push와 PR에서 아래를 자동 수행한다.
 
-- Ubuntu: configure/build/test + mlkem-ref smoke run
-- Windows(MSYS2 MinGW): configure/build/test + mlkem-ref smoke run
+- Ubuntu: configure/build/test + mlkem-ref + mldsa-ref smoke run
+- Windows(MSYS2 MinGW): configure/build/test + mlkem-ref + mldsa-ref smoke run
 
 워크플로 파일:
 - `.github/workflows/ci.yml`

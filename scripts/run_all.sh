@@ -19,5 +19,5 @@ fi
 "${CMAKE_BIN}" "${args[@]}"
 "${CMAKE_BIN}" --build "${BUILD_DIR}" -j
 "${CTEST_BIN}" --test-dir "${BUILD_DIR}" --output-on-failure
-"${BUILD_DIR}/pqc_cli" info
-"${BUILD_DIR}/pqc_cli" benchmark --alg mlkem-ref --iterations 100
+"${BUILD_DIR}/pqc_cli" info --alg mlkem-ref --sig-alg mldsa-ref
+"${BUILD_DIR}/pqc_cli" benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 100 --out bench_result.csv
