@@ -15,7 +15,7 @@ jobs:
       - name: Install build tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y cmake gcc make
+          sudo apt-get install -y cmake gcc make python3
 
       - name: Configure
         run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release
@@ -30,6 +30,15 @@ jobs:
         run: |
           ./build/pqc_cli info --alg mlkem-ref --sig-alg mldsa-ref
           ./build/pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv
+
+      - name: Parse benchmark summary
+        run: python3 bench/parse_results.py bench_result.csv
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-linux
+          path: bench_result.csv
 
   windows:
     runs-on: windows-latest
@@ -48,6 +57,7 @@ jobs:
             mingw-w64-x86_64-gcc
             mingw-w64-x86_64-cmake
             mingw-w64-x86_64-make
+            mingw-w64-x86_64-python
 
       - name: Configure
         run: cmake -S . -B build -G "MinGW Makefiles" -DCMAKE_C_COMPILER=gcc
@@ -62,3 +72,12 @@ jobs:
         run: |
           ./build/pqc_cli.exe info --alg mlkem-ref --sig-alg mldsa-ref
           ./build/pqc_cli.exe benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv
+
+      - name: Parse benchmark summary
+        run: python bench/parse_results.py bench_result.csv
+
+      - name: Upload benchmark artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: benchmark-windows
+          path: bench_result.csv
