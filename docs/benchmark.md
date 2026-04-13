@@ -7,13 +7,16 @@ CLI benchmark는 `dummy`와 `mlkem-ref` 모두 지원하며, 콘솔 출력 + 파
 - `keygen`
 - `encaps`
 - `decaps`
+- `sig-keygen`
+- `sign`
+- `verify`
 
 ## Command
 
 ```bash
-pqc_cli benchmark --alg mlkem-ref --iterations 1000
-pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.txt
-pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.csv
+pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 1000
+pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 1000 --out bench_result.txt
+pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 1000 --out bench_result.csv
 ```
 
 CSV/TXT 결과 파싱:
@@ -31,10 +34,11 @@ python bench/parse_results.py bench_result.csv
 ## Measurement Method
 
 - 동일 알고리즘에서 `iterations` 회 반복 후 평균 ms를 계산한다.
-- 측정 항목: `keygen`, `encaps`, `decaps`
+- 측정 항목: `keygen`, `encaps`, `decaps`, `sig-keygen`, `sign`, `verify`
 - 함께 기록되는 메타데이터:
-  - algorithm name
+  - kem/sig algorithm name
   - key/ciphertext/shared-secret sizes
+  - sig key/signature sizes
   - iteration count
 
 ## Interpretation Guide

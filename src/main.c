@@ -15,15 +15,22 @@ static int has_csv_extension(const char *path) {
 }
 
 static int write_benchmark_output(const char *out_path,
-                                  const char *algorithm,
+                                  const char *kem_algorithm,
+                                  const char *sig_algorithm,
                                   int iterations,
                                   size_t pk,
                                   size_t sk,
                                   size_t ct,
                                   size_t ss,
+                                  size_t sig_pk,
+                                  size_t sig_sk,
+                                  size_t sig_size,
                                   double keygen_ms,
                                   double encaps_ms,
-                                  double decaps_ms) {
+                                  double decaps_ms,
+                                  double sig_keygen_ms,
+                                  double sign_ms,
+                                  double verify_ms) {
     FILE *fp;
     time_t now;
     struct tm *tm_info;
@@ -59,10 +66,10 @@ static int write_benchmark_output(const char *out_path,
             return 0;
         }
         if (write_header) {
-            fprintf(fp, "timestamp,algorithm,iterations,public_key_size,secret_key_size,ciphertext_size,shared_secret_size,avg_keygen_ms,avg_encaps_ms,avg_decaps_ms\n");
+            fprintf(fp, "timestamp,kem_algorithm,sig_algorithm,iterations,public_key_size,secret_key_size,ciphertext_size,shared_secret_size,sig_public_key_size,sig_secret_key_size,signature_size,avg_keygen_ms,avg_encaps_ms,avg_decaps_ms,avg_sig_keygen_ms,avg_sign_ms,avg_verify_ms\n");
         }
-        fprintf(fp, "%s,%s,%d,%zu,%zu,%zu,%zu,%.6f,%.6f,%.6f\n",
-                timestamp, algorithm, iterations, pk, sk, ct, ss, keygen_ms, encaps_ms, decaps_ms);
+        fprintf(fp, "%s,%s,%s,%d,%zu,%zu,%zu,%zu,%zu,%zu,%zu,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+                timestamp, kem_algorithm, sig_algorithm, iterations, pk, sk, ct, ss, sig_pk, sig_sk, sig_size, keygen_ms, encaps_ms, decaps_ms, sig_keygen_ms, sign_ms, verify_ms);
         fclose(fp);
         return 1;
     }
@@ -72,14 +79,21 @@ static int write_benchmark_output(const char *out_path,
         return 0;
     }
     fprintf(fp, "benchmark iterations=%d\n", iterations);
-    fprintf(fp, "algorithm=%s\n", algorithm);
+    fprintf(fp, "kem_algorithm=%s\n", kem_algorithm);
+    fprintf(fp, "sig_algorithm=%s\n", sig_algorithm);
     fprintf(fp, "public_key_size=%zu\n", pk);
     fprintf(fp, "secret_key_size=%zu\n", sk);
     fprintf(fp, "ciphertext_size=%zu\n", ct);
     fprintf(fp, "shared_secret_size=%zu\n", ss);
+    fprintf(fp, "sig_public_key_size=%zu\n", sig_pk);
+    fprintf(fp, "sig_secret_key_size=%zu\n", sig_sk);
+    fprintf(fp, "signature_size=%zu\n", sig_size);
     fprintf(fp, "avg_keygen_ms=%.6f\n", keygen_ms);
     fprintf(fp, "avg_encaps_ms=%.6f\n", encaps_ms);
     fprintf(fp, "avg_decaps_ms=%.6f\n", decaps_ms);
+    fprintf(fp, "avg_sig_keygen_ms=%.6f\n", sig_keygen_ms);
+    fprintf(fp, "avg_sign_ms=%.6f\n", sign_ms);
+    fprintf(fp, "avg_verify_ms=%.6f\n", verify_ms);
     fclose(fp);
     return 1;
 }
@@ -564,11 +578,19 @@ static int handle_benchmark(int argc, char **argv) {
     double keygen_ms;
     double encaps_ms;
     double decaps_ms;
+    double sig_keygen_ms;
+    double sign_ms;
+    double verify_ms;
     size_t pk, sk, ct, ss;
+    size_t sig_pk, sig_sk, sig_len;
     uint8_t *pub = NULL;
     uint8_t *sec = NULL;
     uint8_t *ciphertext = NULL;
     uint8_t *shared_secret = NULL;
+    uint8_t *sig_pub = NULL;
+    uint8_t *sig_sec = NULL;
+    uint8_t *signature = NULL;
+    const uint8_t benchmark_msg[] = "pqc benchmark signing message";
     pqc_status_t st;
     int rc = 0;
 
@@ -578,11 +600,16 @@ static int handle_benchmark(int argc, char **argv) {
     }
 
     pqc_get_sizes(&pk, &sk, &ct, &ss);
+    pqc_sig_get_sizes(&sig_pk, &sig_sk, &sig_len);
     pub = (uint8_t *)malloc(pk);
     sec = (uint8_t *)malloc(sk);
     ciphertext = (uint8_t *)malloc(ct);
     shared_secret = (uint8_t *)malloc(ss);
-    if (pub == NULL || sec == NULL || ciphertext == NULL || shared_secret == NULL) {
+    sig_pub = (uint8_t *)malloc(sig_pk);
+    sig_sec = (uint8_t *)malloc(sig_sk);
+    signature = (uint8_t *)malloc(sig_len);
+    if (pub == NULL || sec == NULL || ciphertext == NULL || shared_secret == NULL ||
+        sig_pub == NULL || sig_sec == NULL || signature == NULL) {
         fprintf(stderr, "memory allocation failed\n");
         rc = 1;
         goto done;
@@ -638,19 +665,107 @@ static int handle_benchmark(int argc, char **argv) {
     end = clock();
     decaps_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
 
+    start = clock();
+    for (i = 0; i < iterations; ++i) {
+        st = pqc_sig_keypair(sig_pub, sig_pk, sig_sec, sig_sk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "benchmark sig keygen failed: %s\n", pqc_status_to_string(st));
+            rc = 1;
+            goto done;
+        }
+    }
+    end = clock();
+    sig_keygen_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
+
+    st = pqc_sig_keypair(sig_pub, sig_pk, sig_sec, sig_sk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "benchmark signature setup failed: %s\n", pqc_status_to_string(st));
+        rc = 1;
+        goto done;
+    }
+
+    start = clock();
+    for (i = 0; i < iterations; ++i) {
+        st = pqc_sig_sign(signature,
+                          sig_len,
+                          benchmark_msg,
+                          sizeof(benchmark_msg) - 1,
+                          sig_sec,
+                          sig_sk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "benchmark sign failed: %s\n", pqc_status_to_string(st));
+            rc = 1;
+            goto done;
+        }
+    }
+    end = clock();
+    sign_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
+
+    st = pqc_sig_sign(signature,
+                      sig_len,
+                      benchmark_msg,
+                      sizeof(benchmark_msg) - 1,
+                      sig_sec,
+                      sig_sk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "benchmark signature setup failed: %s\n", pqc_status_to_string(st));
+        rc = 1;
+        goto done;
+    }
+
+    start = clock();
+    for (i = 0; i < iterations; ++i) {
+        st = pqc_sig_verify(signature,
+                            sig_len,
+                            benchmark_msg,
+                            sizeof(benchmark_msg) - 1,
+                            sig_pub,
+                            sig_pk);
+        if (st != PQC_OK) {
+            fprintf(stderr, "benchmark verify failed: %s\n", pqc_status_to_string(st));
+            rc = 1;
+            goto done;
+        }
+    }
+    end = clock();
+    verify_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
+
     printf("benchmark iterations=%d\n", iterations);
-    printf("algorithm=%s\n", pqc_get_algorithm_name());
+    printf("kem_algorithm=%s\n", pqc_get_algorithm_name());
+    printf("sig_algorithm=%s\n", pqc_get_signature_algorithm_name());
     printf("public_key_size=%zu\n", pk);
     printf("secret_key_size=%zu\n", sk);
     printf("ciphertext_size=%zu\n", ct);
     printf("shared_secret_size=%zu\n", ss);
+    printf("sig_public_key_size=%zu\n", sig_pk);
+    printf("sig_secret_key_size=%zu\n", sig_sk);
+    printf("signature_size=%zu\n", sig_len);
     printf("avg_keygen_ms=%.3f\n", keygen_ms);
     printf("avg_encaps_ms=%.3f\n", encaps_ms);
     printf("avg_decaps_ms=%.3f\n", decaps_ms);
+    printf("avg_sig_keygen_ms=%.3f\n", sig_keygen_ms);
+    printf("avg_sign_ms=%.3f\n", sign_ms);
+    printf("avg_verify_ms=%.3f\n", verify_ms);
     printf("note=development_benchmark_not_for_production\n");
 
     if (out_path != NULL) {
-        if (!write_benchmark_output(out_path, pqc_get_algorithm_name(), iterations, pk, sk, ct, ss, keygen_ms, encaps_ms, decaps_ms)) {
+        if (!write_benchmark_output(out_path,
+                                    pqc_get_algorithm_name(),
+                                    pqc_get_signature_algorithm_name(),
+                                    iterations,
+                                    pk,
+                                    sk,
+                                    ct,
+                                    ss,
+                                    sig_pk,
+                                    sig_sk,
+                                    sig_len,
+                                    keygen_ms,
+                                    encaps_ms,
+                                    decaps_ms,
+                                    sig_keygen_ms,
+                                    sign_ms,
+                                    verify_ms)) {
             fprintf(stderr, "failed to write benchmark output file: %s\n", out_path);
             rc = 1;
             goto done;
@@ -661,10 +776,15 @@ static int handle_benchmark(int argc, char **argv) {
 done:
     secure_memzero(sec, sk);
     secure_memzero(shared_secret, ss);
+    secure_memzero(sig_sec, sig_sk);
+    secure_memzero(signature, sig_len);
     free(pub);
     free(sec);
     free(ciphertext);
     free(shared_secret);
+    free(sig_pub);
+    free(sig_sec);
+    free(signature);
     return rc;
 }
 

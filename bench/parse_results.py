@@ -48,14 +48,21 @@ def main() -> int:
     iterations = kv.get("iterations", kv.get("benchmark iterations", "N/A"))
     print("Benchmark Summary")
     print(f"- iterations: {iterations}")
-    print(f"- algorithm: {kv.get('algorithm', 'N/A')}")
+    print(f"- kem_algorithm: {kv.get('kem_algorithm', kv.get('algorithm', 'N/A'))}")
+    print(f"- sig_algorithm: {kv.get('sig_algorithm', 'N/A')}")
     print(f"- public_key_size: {kv.get('public_key_size', 'N/A')}")
     print(f"- secret_key_size: {kv.get('secret_key_size', 'N/A')}")
     print(f"- ciphertext_size: {kv.get('ciphertext_size', 'N/A')}")
     print(f"- shared_secret_size: {kv.get('shared_secret_size', 'N/A')}")
+    print(f"- sig_public_key_size: {kv.get('sig_public_key_size', 'N/A')}")
+    print(f"- sig_secret_key_size: {kv.get('sig_secret_key_size', 'N/A')}")
+    print(f"- signature_size: {kv.get('signature_size', 'N/A')}")
     print(f"- avg_keygen_ms: {kv.get('avg_keygen_ms', 'N/A')}")
     print(f"- avg_encaps_ms: {kv.get('avg_encaps_ms', 'N/A')}")
     print(f"- avg_decaps_ms: {kv.get('avg_decaps_ms', 'N/A')}")
+    print(f"- avg_sig_keygen_ms: {kv.get('avg_sig_keygen_ms', 'N/A')}")
+    print(f"- avg_sign_ms: {kv.get('avg_sign_ms', 'N/A')}")
+    print(f"- avg_verify_ms: {kv.get('avg_verify_ms', 'N/A')}")
     return 0
 
 

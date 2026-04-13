@@ -120,7 +120,7 @@ scripts\run_all_windows.bat
 ./build/pqc_cli sign --sec sig_sec.key --msg message.txt --sig message.sig
 ./build/pqc_cli verify --pub sig_pub.key --msg message.txt --sig message.sig
 ./build/pqc_cli benchmark --iterations 1000
-./build/pqc_cli benchmark --alg mlkem-ref --iterations 1000 --out bench_result.csv
+./build/pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 1000 --out bench_result.csv
 ```
 
 ## Test
