@@ -136,7 +136,7 @@ GitHub Actions CI는 `main` push와 PR에서 아래를 자동 수행한다.
 - Ubuntu: configure/build/test + mlkem-ref + mldsa-ref smoke run
 - Windows(MSYS2 MinGW): configure/build/test + mlkem-ref + mldsa-ref smoke run
 - 두 환경 모두 benchmark CSV를 `bench/parse_results.py`로 파싱 검증
-- benchmark CSV를 CI artifact로 업로드
+- benchmark CSV + 파싱 요약(`bench_summary.txt`)을 CI artifact로 업로드
 
 워크플로 파일:
 - `.github/workflows/ci.yml`

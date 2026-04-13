@@ -21,3 +21,11 @@ fi
 "${CTEST_BIN}" --test-dir "${BUILD_DIR}" --output-on-failure
 "${BUILD_DIR}/pqc_cli" info --alg mlkem-ref --sig-alg mldsa-ref
 "${BUILD_DIR}/pqc_cli" benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 100 --out bench_result.csv
+
+if command -v python3 >/dev/null 2>&1; then
+  python3 bench/parse_results.py bench_result.csv | tee bench_summary.txt
+elif command -v python >/dev/null 2>&1; then
+  python bench/parse_results.py bench_result.csv | tee bench_summary.txt
+else
+  echo "[WARN] python not found; skip benchmark summary parse"
+fi

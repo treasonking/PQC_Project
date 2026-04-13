@@ -32,13 +32,15 @@ jobs:
           ./build/pqc_cli benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv
 
       - name: Parse benchmark summary
-        run: python3 bench/parse_results.py bench_result.csv
+        run: python3 bench/parse_results.py bench_result.csv | tee bench_summary.txt
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-linux
-          path: bench_result.csv
+          path: |
+            bench_result.csv
+            bench_summary.txt
 
   windows:
     runs-on: windows-latest
@@ -74,10 +76,12 @@ jobs:
           ./build/pqc_cli.exe benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 50 --out bench_result.csv
 
       - name: Parse benchmark summary
-        run: python bench/parse_results.py bench_result.csv
+        run: python bench/parse_results.py bench_result.csv > bench_summary.txt && cat bench_summary.txt
 
       - name: Upload benchmark artifact
         uses: actions/upload-artifact@v4
         with:
           name: benchmark-windows
-          path: bench_result.csv
+          path: |
+            bench_result.csv
+            bench_summary.txt

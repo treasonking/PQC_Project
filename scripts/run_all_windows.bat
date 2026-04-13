@@ -19,5 +19,30 @@ if errorlevel 1 exit /b 1
 "%BUILD_DIR%\pqc_cli.exe" benchmark --alg mlkem-ref --sig-alg mldsa-ref --iterations 100 --out bench_result.csv
 if errorlevel 1 exit /b 1
 
+set "PARSE_OK=0"
+where py >nul 2>nul
+if %errorlevel%==0 (
+  py -3 bench\parse_results.py bench_result.csv > bench_summary.txt 2>nul
+  if not errorlevel 1 (
+    set "PARSE_OK=1"
+  )
+)
+
+if "%PARSE_OK%"=="0" (
+  where python >nul 2>nul
+  if %errorlevel%==0 (
+    python bench\parse_results.py bench_result.csv > bench_summary.txt 2>nul
+    if not errorlevel 1 (
+      set "PARSE_OK=1"
+    )
+  )
+)
+
+if "%PARSE_OK%"=="1" (
+  type bench_summary.txt
+) else (
+  echo [WARN] python runtime not available; skip benchmark summary parse
+)
+
 echo [OK] run_all_windows complete
 endlocal
