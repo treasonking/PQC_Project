@@ -1,7 +1,30 @@
 # PQC Crypto Module Lab
 
+[![CI](https://github.com/treasonking/PQC_Project/actions/workflows/ci.yml/badge.svg)](https://github.com/treasonking/PQC_Project/actions/workflows/ci.yml)
+[![Quality](https://github.com/treasonking/PQC_Project/actions/workflows/quality.yml/badge.svg)](https://github.com/treasonking/PQC_Project/actions/workflows/quality.yml)
+
 C 기반 PQC 모듈 개인 프로젝트입니다.  
 목표는 **KEM + Signature를 공통 API/CLI/테스트/벤치마크/문서화까지 연결**해서 실제 개발 역량을 보여주는 것입니다.
+
+## Architecture Summary
+
+이 프로젝트는 **공통 API 계층(`pqc_module`)과 알고리즘 종속 계층(`pqc_kem`, `pqc_sig`)을 분리**한 구조입니다.  
+이렇게 분리하면 CLI/테스트 코드를 유지한 채 백엔드(더미 ↔ PQClean 참조 구현)를 교체할 수 있어, 구현 변경 대비 검증/문서/운영 흐름을 안정적으로 유지할 수 있습니다.
+
+## Security Scope Boundary
+
+이 저장소는 **학습/참조 구현 통합 중심**입니다.  
+즉, side-channel 완화, production hardening, 인증 대응(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위에 포함하지 않습니다.
+
+## Validation Snapshot
+
+| What | Current Coverage |
+| --- | --- |
+| KEM correctness | roundtrip/repeat/tamper (`test_kem`, `test_ref_kem`) |
+| Signature correctness | roundtrip/tamper/length/empty message (`test_sig`) |
+| KAT-style check | stored ML-DSA vector verify (`test_kat_mldsa`) |
+| CLI failure handling | missing/corrupted input file tests |
+| CI/Quality | Linux+Windows CI, `cppcheck` quality workflow |
 
 ## Current Scope
 
@@ -142,6 +165,7 @@ ctest --test-dir build --output-on-failure
 | `test_negative` | 알고리즘/입력 오류 처리 |
 | `cli_missing_input_file` | CLI 입력 파일 누락 실패 |
 | `cli_corrupted_key_file` | CLI 손상 키 파일 실패 |
+| `quality.yml` | `cppcheck` 기반 정적 점검 자동화 |
 
 ## Verification Notes
 
