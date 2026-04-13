@@ -10,6 +10,7 @@ static int run_sign_verify_once(void) {
     uint8_t *sec = NULL;
     uint8_t *sig = NULL;
     const uint8_t msg[] = "pqc signature test message";
+    const uint8_t empty_msg[] = "";
     pqc_status_t st;
 
     pqc_sig_get_sizes(&pk, &sk, &sig_len);
@@ -43,6 +44,36 @@ static int run_sign_verify_once(void) {
     st = pqc_sig_verify(sig, sig_len, msg, sizeof(msg) - 1, pub, pk);
     if (st != PQC_ERR_VERIFY_FAILED) {
         fprintf(stderr, "tampered signature should fail\n");
+        return 1;
+    }
+
+    st = pqc_sig_sign(sig, sig_len - 1, msg, sizeof(msg) - 1, sec, sk);
+    if (st != PQC_ERR_BUFFER_TOO_SMALL) {
+        fprintf(stderr, "short signature buffer should fail\n");
+        return 1;
+    }
+
+    st = pqc_sig_sign(sig, sig_len, empty_msg, 0, sec, sk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "empty message sign should succeed\n");
+        return 1;
+    }
+    st = pqc_sig_verify(sig, sig_len, empty_msg, 0, pub, pk);
+    if (st != PQC_OK) {
+        fprintf(stderr, "empty message verify should succeed\n");
+        return 1;
+    }
+
+    st = pqc_sig_verify(sig, sig_len, empty_msg, 0, pub, pk - 1);
+    if (st != PQC_ERR_BUFFER_TOO_SMALL) {
+        fprintf(stderr, "short public key length should fail\n");
+        return 1;
+    }
+
+    pub[0] ^= 0x01;
+    st = pqc_sig_verify(sig, sig_len, empty_msg, 0, pub, pk);
+    if (st != PQC_ERR_VERIFY_FAILED) {
+        fprintf(stderr, "tampered public key should fail\n");
         return 1;
     }
 

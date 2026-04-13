@@ -4,4 +4,7 @@ build/
 *.ss
 *.sig
 !tests/data/bad.ct
+!tests/data/kat_mldsa_pub.key
+!tests/data/kat_mldsa_sec.key
+!tests/data/kat_mldsa.sig
 bench_result.*

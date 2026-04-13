@@ -82,11 +82,6 @@ add_executable(pqc_cli
 
 target_link_libraries(pqc_cli PRIVATE pqc_module)
 
-add_executable(benchmark_kem
-    bench/benchmark_kem.c
-)
-target_link_libraries(benchmark_kem PRIVATE pqc_module)
-
 include(CTest)
 if(BUILD_TESTING)
     add_executable(test_kem
@@ -112,6 +107,13 @@ if(BUILD_TESTING)
     )
     target_link_libraries(test_sig PRIVATE pqc_module)
     add_test(NAME test_sig COMMAND test_sig)
+
+    add_executable(test_kat_mldsa
+        tests/test_kat_mldsa.c
+    )
+    target_link_libraries(test_kat_mldsa PRIVATE pqc_module)
+    target_compile_definitions(test_kat_mldsa PRIVATE TESTS_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
+    add_test(NAME test_kat_mldsa COMMAND test_kat_mldsa)
 
     add_test(NAME cli_help COMMAND pqc_cli --help)
 
