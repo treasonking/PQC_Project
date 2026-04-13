@@ -29,6 +29,18 @@ C 기반 PQC 모듈 개인 프로젝트입니다.
 | Tests | Yes | Yes | 단위/음성/KAT 포함 |
 | CI | Yes | Yes | Linux + Windows(MSYS2 MinGW) |
 
+## Build Matrix (CMake Conditional)
+
+| Condition | KEM Backend | Signature Backend |
+| --- | --- | --- |
+| `third_party/mlkem_pqclean` + `common` 존재, `third_party/mldsa_pqclean` 존재 | Dummy + ML-KEM Ref | Dummy + ML-DSA Ref |
+| ML-KEM 경로 미존재 | Dummy only | (ML-DSA 조건에 따름) |
+| ML-DSA 경로 미존재 | (ML-KEM 조건에 따름) | Dummy only |
+
+참고:
+- KEM Ref 활성 플래그: `PQC_ENABLE_MLKEM_REF`
+- Signature Ref 활성 플래그: `PQC_ENABLE_MLDSA_REF`
+
 ## Directory
 
 ```text
@@ -76,7 +88,8 @@ pqc-crypto-module-lab/
   │   ├─ run_all.sh
   │   └─ run_all_windows.bat
   └─ .github/workflows/
-      └─ ci.yml
+      ├─ ci.yml
+      └─ quality.yml
 ```
 
 ## Build
@@ -154,3 +167,12 @@ GitHub Actions (`.github/workflows/ci.yml`):
 
 정적 점검 (`.github/workflows/quality.yml`):
 - `cppcheck` 실행 (warning/style/performance/portability)
+
+## Portfolio Metadata (Recommended)
+
+GitHub `About`에 아래 값을 권장합니다.
+
+- Description:
+  - `C-based PQC crypto module lab integrating ML-KEM-768 and ML-DSA-65 with unified API, CLI, tests, benchmarks, and CI.`
+- Topics:
+  - `pqc`, `ml-kem`, `ml-dsa`, `cryptography`, `c`, `cmake`, `pqclean`
