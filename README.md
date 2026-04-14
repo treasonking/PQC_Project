@@ -7,6 +7,14 @@
 C 기반 PQC 모듈 개인 프로젝트입니다.  
 목표는 **KEM + Signature를 공통 API/CLI/테스트/벤치마크/문서화까지 연결**해서 실제 개발 역량을 보여주는 것입니다.
 
+## Interviewer Quick View
+
+| Focus | Summary |
+| --- | --- |
+| Why this architecture | `pqc_module`(공통 인터페이스)와 `pqc_kem`/`pqc_sig`(알고리즘 계층)를 분리해, CLI/테스트 코드를 유지한 채 백엔드(Dummy ↔ PQClean Ref)를 교체할 수 있도록 설계했습니다. |
+| Security boundary | 학습/참조 구현 통합이 목적이며, side-channel 대응, production hardening, 인증(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위 밖입니다. |
+| Test evidence | 정상 경로(라운드트립/KAT) + 실패 경로(변조 입력, 길이 오류, 빈 메시지, 누락/손상 파일)를 CI에서 자동 검증합니다. |
+
 ## Architecture Summary
 
 이 프로젝트는 **공통 API 계층(`pqc_module`)과 알고리즘 종속 계층(`pqc_kem`, `pqc_sig`)을 분리**한 구조입니다.  
@@ -24,7 +32,7 @@ C 기반 PQC 모듈 개인 프로젝트입니다.
 | KEM correctness | roundtrip/repeat/tamper (`test_kem`, `test_ref_kem`) |
 | Signature correctness | roundtrip/tamper/length/empty message (`test_sig`) |
 | KAT-style check | stored ML-DSA vector verify (`test_kat_mldsa`) |
-| CLI failure handling | missing/corrupted input file tests |
+| Failure-case handling | tampered ciphertext/signature, invalid lengths, empty message, missing/corrupted input files |
 | CI/Quality | Linux+Windows CI, `cppcheck` quality workflow |
 
 ## Current Scope
