@@ -27,4 +27,5 @@ jobs:
             --std=c11 \
             --error-exitcode=1 \
             --suppress=missingIncludeSystem \
-            --inline-suppr
+            --inline-suppr \
+            -i third_party
