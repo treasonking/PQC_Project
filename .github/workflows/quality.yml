@@ -17,11 +17,14 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y cppcheck
 
+      - name: Configure (compile_commands.json)
+        run: cmake -S . -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_EXPORT_COMPILE_COMMANDS=ON
+
       - name: Run cppcheck
         run: |
-          cppcheck --enable=warning,style,performance,portability \
+          cppcheck --project=build/compile_commands.json \
+            --enable=warning,performance,portability \
             --std=c11 \
             --error-exitcode=1 \
             --suppress=missingIncludeSystem \
-            --inline-suppr \
-            src include tests
+            --inline-suppr
