@@ -15,6 +15,32 @@ C 기반 PQC 모듈 개인 프로젝트입니다.
 | Security boundary | 학습/참조 구현 통합이 목적이며, side-channel 대응, production hardening, 인증(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위 밖입니다. |
 | Test evidence | 정상 경로(라운드트립/KAT) + 실패 경로(변조 입력, 길이 오류, 빈 메시지, 누락/손상 파일)를 CI에서 자동 검증합니다. |
 
+## Architecture Diagram
+
+```mermaid
+flowchart LR
+  U["User / CI"] --> CLI["pqc_cli (src/main.c)"]
+  CLI --> API["pqc_module API (include/pqc_module.h)"]
+  API --> KEM["pqc_kem backend selector"]
+  API --> SIG["pqc_sig backend selector"]
+  KEM --> DKM["Dummy ML-KEM"]
+  KEM --> RKM["PQClean ML-KEM Ref"]
+  SIG --> DSI["Dummy ML-DSA"]
+  SIG --> RSI["PQClean ML-DSA Ref"]
+  API --> T["Tests (ctest)"]
+  API --> B["Benchmark (pqc_cli benchmark)"]
+```
+
+## Benchmark Snapshot (Sample)
+
+Latest sample (`mlkem-ref` + `mldsa-ref`, `iterations=1000`):
+
+| KEM keygen (ms) | KEM encaps (ms) | KEM decaps (ms) | SIG keygen (ms) | SIG sign (ms) | SIG verify (ms) |
+| --- | --- | --- | --- | --- | --- |
+| 0.402 | 0.420 | 0.102 | 0.547 | 1.326 | 0.230 |
+
+참고: 환경/컴파일 옵션에 따라 값은 달라질 수 있으며, 원본 결과는 `bench_result.csv`와 `docs/benchmark.md`를 기준으로 갱신합니다.
+
 ## Architecture Summary
 
 이 프로젝트는 **공통 API 계층(`pqc_module`)과 알고리즘 종속 계층(`pqc_kem`, `pqc_sig`)을 분리**한 구조입니다.  
