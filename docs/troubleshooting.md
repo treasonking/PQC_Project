@@ -55,3 +55,41 @@ git config --global user.email "you@example.com"
 
 - 에러 메시지에 키/공유비밀 바이트를 포함하지 않는다.
 - 파일 경로/상태코드 중심으로 로그를 남긴다.
+
+## CLI failure examples
+
+없는 공개키 파일로 encaps 실행:
+
+```powershell
+.\build\pqc_cli.exe encaps --alg mlkem-ref --pub does_not_exist.key --ct out.ct --ss out.ss
+```
+
+예상 결과:
+
+```text
+failed to read public key file
+```
+
+손상된 secret key/ciphertext로 decaps 실행:
+
+```powershell
+.\build\pqc_cli.exe decaps --alg mlkem-ref --sec tests\data\bad.sec --ct tests\data\bad.ct --ss recovered.ss
+```
+
+예상 결과:
+
+```text
+failed to read input files
+```
+
+지원하지 않는 알고리즘 지정:
+
+```powershell
+.\build\pqc_cli.exe info --alg unknown
+```
+
+예상 결과:
+
+```text
+unsupported --alg value: unknown
+```

@@ -5,6 +5,12 @@ set(CMAKE_C_STANDARD 11)
 set(CMAKE_C_STANDARD_REQUIRED ON)
 set(CMAKE_C_EXTENSIONS OFF)
 
+if(CMAKE_BUILD_TYPE)
+    set(PQC_BUILD_TYPE_VALUE "${CMAKE_BUILD_TYPE}")
+else()
+    set(PQC_BUILD_TYPE_VALUE "Unknown")
+endif()
+
 set(PQC_MODULE_SOURCES
     src/pqc_module.c
     src/pqc_kem.c
@@ -89,6 +95,7 @@ add_executable(pqc_cli
     src/main.c
 )
 pqc_enable_project_warnings(pqc_cli)
+target_compile_definitions(pqc_cli PRIVATE PQC_BUILD_TYPE="${PQC_BUILD_TYPE_VALUE}")
 
 target_link_libraries(pqc_cli PRIVATE pqc_module)
 

@@ -14,6 +14,38 @@ static int has_csv_extension(const char *path) {
     return dot != NULL && strcmp(dot, ".csv") == 0;
 }
 
+static const char *build_platform_name(void) {
+#if defined(_WIN32)
+    return "Windows";
+#elif defined(__APPLE__)
+    return "macOS";
+#elif defined(__linux__)
+    return "Linux";
+#else
+    return "Unknown";
+#endif
+}
+
+static const char *build_compiler_name(void) {
+#if defined(__clang__)
+    return "Clang " __clang_version__;
+#elif defined(__GNUC__)
+    return "GCC " __VERSION__;
+#elif defined(_MSC_VER)
+    return "MSVC";
+#else
+    return "Unknown";
+#endif
+}
+
+static const char *build_type_name(void) {
+#ifdef PQC_BUILD_TYPE
+    return PQC_BUILD_TYPE;
+#else
+    return "Unknown";
+#endif
+}
+
 static int write_benchmark_output(const char *out_path,
                                   const char *kem_algorithm,
                                   const char *sig_algorithm,
@@ -66,10 +98,29 @@ static int write_benchmark_output(const char *out_path,
             return 0;
         }
         if (write_header) {
-            fprintf(fp, "timestamp,kem_algorithm,sig_algorithm,iterations,public_key_size,secret_key_size,ciphertext_size,shared_secret_size,sig_public_key_size,sig_secret_key_size,signature_size,avg_keygen_ms,avg_encaps_ms,avg_decaps_ms,avg_sig_keygen_ms,avg_sign_ms,avg_verify_ms\n");
+            fprintf(fp, "timestamp,platform,compiler,build_type,timer,kem_algorithm,sig_algorithm,iterations,public_key_size,secret_key_size,ciphertext_size,shared_secret_size,sig_public_key_size,sig_secret_key_size,signature_size,avg_keygen_ms,avg_encaps_ms,avg_decaps_ms,avg_sig_keygen_ms,avg_sign_ms,avg_verify_ms\n");
         }
-        fprintf(fp, "%s,%s,%s,%d,%zu,%zu,%zu,%zu,%zu,%zu,%zu,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
-                timestamp, kem_algorithm, sig_algorithm, iterations, pk, sk, ct, ss, sig_pk, sig_sk, sig_size, keygen_ms, encaps_ms, decaps_ms, sig_keygen_ms, sign_ms, verify_ms);
+        fprintf(fp, "%s,%s,%s,%s,clock_process_cpu_time,%s,%s,%d,%zu,%zu,%zu,%zu,%zu,%zu,%zu,%.6f,%.6f,%.6f,%.6f,%.6f,%.6f\n",
+                timestamp,
+                build_platform_name(),
+                build_compiler_name(),
+                build_type_name(),
+                kem_algorithm,
+                sig_algorithm,
+                iterations,
+                pk,
+                sk,
+                ct,
+                ss,
+                sig_pk,
+                sig_sk,
+                sig_size,
+                keygen_ms,
+                encaps_ms,
+                decaps_ms,
+                sig_keygen_ms,
+                sign_ms,
+                verify_ms);
         fclose(fp);
         return 1;
     }
@@ -79,6 +130,10 @@ static int write_benchmark_output(const char *out_path,
         return 0;
     }
     fprintf(fp, "benchmark iterations=%d\n", iterations);
+    fprintf(fp, "platform=%s\n", build_platform_name());
+    fprintf(fp, "compiler=%s\n", build_compiler_name());
+    fprintf(fp, "build_type=%s\n", build_type_name());
+    fprintf(fp, "timer=clock_process_cpu_time\n");
     fprintf(fp, "kem_algorithm=%s\n", kem_algorithm);
     fprintf(fp, "sig_algorithm=%s\n", sig_algorithm);
     fprintf(fp, "public_key_size=%zu\n", pk);
@@ -731,6 +786,10 @@ static int handle_benchmark(int argc, char **argv) {
     verify_ms = ((double)(end - start) * 1000.0 / CLOCKS_PER_SEC) / iterations;
 
     printf("benchmark iterations=%d\n", iterations);
+    printf("platform=%s\n", build_platform_name());
+    printf("compiler=%s\n", build_compiler_name());
+    printf("build_type=%s\n", build_type_name());
+    printf("timer=clock_process_cpu_time\n");
     printf("kem_algorithm=%s\n", pqc_get_algorithm_name());
     printf("sig_algorithm=%s\n", pqc_get_signature_algorithm_name());
     printf("public_key_size=%zu\n", pk);

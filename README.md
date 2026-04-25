@@ -60,7 +60,7 @@ Latest sample (`mlkem-ref` + `mldsa-ref`, `iterations=1000`):
 | --- | --- |
 | KEM correctness | roundtrip/repeat/tamper (`test_kem`, `test_ref_kem`) |
 | Signature correctness | roundtrip/tamper/length/empty message (`test_sig`) |
-| KAT-style check | stored ML-DSA vector verify (`test_kat_mldsa`) |
+| KAT-style check | stored ML-DSA vector verify + stored secret-key sign/verify (`test_kat_mldsa`) |
 | Failure-case handling | tampered ciphertext/signature, invalid lengths, empty message, missing/corrupted input files |
 | CI/Quality | Linux+Windows CI, `cppcheck` quality workflow |
 
@@ -112,6 +112,7 @@ pqc-crypto-module-lab/
   │   ├─ architecture.md
   │   ├─ benchmark.md
   │   ├─ security.md
+  │   ├─ cli.md
   │   ├─ troubleshooting.md
   │   └─ portfolio-summary.md
   ├─ include/
@@ -196,7 +197,7 @@ ctest --test-dir build --output-on-failure
 - KEM roundtrip/repeat/tamper
 - Signature roundtrip/tamper/empty message/length error
 - CLI 파일 오류 케이스
-- ML-DSA KAT(저장된 벡터 verify)
+- ML-DSA KAT(저장된 벡터 verify + 저장된 secret key sign/verify)
 
 ## Test Evidence (Current)
 
@@ -205,7 +206,7 @@ ctest --test-dir build --output-on-failure
 | `test_kem` | KEM 정상/반복/변조 ciphertext 실패 |
 | `test_ref_kem` | ML-KEM 참조 백엔드 roundtrip |
 | `test_sig` | 서명 정상/변조/길이 오류/빈 메시지 |
-| `test_kat_mldsa` | 저장된 ML-DSA 벡터 verify (KAT 성격) |
+| `test_kat_mldsa` | 저장된 ML-DSA 벡터 verify, 저장된 secret key sign/verify, 변조 signature/public key 실패 |
 | `test_negative` | 알고리즘/입력 오류 처리 |
 | `cli_missing_input_file` | CLI 입력 파일 누락 실패 |
 | `cli_corrupted_key_file` | CLI 손상 키 파일 실패 |
@@ -214,7 +215,9 @@ ctest --test-dir build --output-on-failure
 ## Verification Notes
 
 - 프로젝트는 PQClean 참조 구현을 통합해 동작합니다.
-- 다만 KAT는 현재 **ML-DSA verify 기반 벡터 검증** 중심이며, 표준 벡터 전체를 자동화한 상태는 아닙니다.
+- KAT 성격의 검증은 현재 **저장된 ML-DSA 공개키/비밀키/메시지/서명 벡터**를 사용합니다.
+- 자동화 범위: 저장된 서명 verify, 저장된 secret key 기반 sign→verify, 변조 signature/public key 실패 확인.
+- 아직 NIST/PQClean 공식 벡터 전체를 자동 반복하는 상태는 아닙니다.
 - 향후 개선: NIST/PQClean 공식 벡터 기반 자동 KAT 확장.
 
 ## Security Notes (Honest)
