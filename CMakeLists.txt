@@ -12,6 +12,14 @@ set(PQC_MODULE_SOURCES
     src/pqc_utils.c
 )
 
+function(pqc_enable_project_warnings target_name)
+    if(MSVC)
+        target_compile_options(${target_name} PRIVATE /W4)
+    else()
+        target_compile_options(${target_name} PRIVATE -Wall -Wextra -Wpedantic)
+    endif()
+endfunction()
+
 set(PQCLEAN_MLKEM768_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mlkem_pqclean/clean")
 set(PQCLEAN_MLDSA65_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mldsa_pqclean/clean")
 set(PQCLEAN_COMMON_DIR "${CMAKE_CURRENT_SOURCE_DIR}/third_party/mlkem_pqclean/common")
@@ -58,6 +66,7 @@ endif()
 add_library(pqc_module
     ${PQC_MODULE_SOURCES}
 )
+pqc_enable_project_warnings(pqc_module)
 
 target_include_directories(pqc_module
     PUBLIC
@@ -79,6 +88,7 @@ endif()
 add_executable(pqc_cli
     src/main.c
 )
+pqc_enable_project_warnings(pqc_cli)
 
 target_link_libraries(pqc_cli PRIVATE pqc_module)
 
@@ -87,33 +97,45 @@ if(BUILD_TESTING)
     add_executable(test_kem
         tests/test_kem.c
     )
+    pqc_enable_project_warnings(test_kem)
     target_link_libraries(test_kem PRIVATE pqc_module)
     add_test(NAME test_kem COMMAND test_kem)
 
     add_executable(test_negative
         tests/test_negative.c
     )
+    pqc_enable_project_warnings(test_negative)
     target_link_libraries(test_negative PRIVATE pqc_module)
     add_test(NAME test_negative COMMAND test_negative)
 
     add_executable(test_ref_kem
         tests/test_ref_kem.c
     )
+    pqc_enable_project_warnings(test_ref_kem)
     target_link_libraries(test_ref_kem PRIVATE pqc_module)
     add_test(NAME test_ref_kem COMMAND test_ref_kem)
 
     add_executable(test_sig
         tests/test_sig.c
     )
+    pqc_enable_project_warnings(test_sig)
     target_link_libraries(test_sig PRIVATE pqc_module)
     add_test(NAME test_sig COMMAND test_sig)
 
     add_executable(test_kat_mldsa
         tests/test_kat_mldsa.c
     )
+    pqc_enable_project_warnings(test_kat_mldsa)
     target_link_libraries(test_kat_mldsa PRIVATE pqc_module)
     target_compile_definitions(test_kat_mldsa PRIVATE TESTS_DATA_DIR="${CMAKE_SOURCE_DIR}/tests/data")
     add_test(NAME test_kat_mldsa COMMAND test_kat_mldsa)
+
+    add_executable(test_utils
+        tests/test_utils.c
+    )
+    pqc_enable_project_warnings(test_utils)
+    target_link_libraries(test_utils PRIVATE pqc_module)
+    add_test(NAME test_utils COMMAND test_utils)
 
     add_test(NAME cli_help COMMAND pqc_cli --help)
 

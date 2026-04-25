@@ -30,7 +30,11 @@ typedef enum {
     PQC_SIG_ALG_ML_DSA_65_REF = 1
 } pqc_sig_algorithm_t;
 
-/* Select the active KEM backend (default: PQC_ALG_ML_KEM_768_DUMMY). */
+/*
+ * Select the process-global KEM backend (default: PQC_ALG_ML_KEM_768_DUMMY).
+ * The backend selector is intentionally simple for CLI/testing, but it is not
+ * thread-safe. Use external synchronization if multiple threads can reconfigure it.
+ */
 pqc_status_t pqc_set_algorithm(pqc_algorithm_t algorithm);
 pqc_algorithm_t pqc_get_algorithm(void);
 
@@ -59,6 +63,10 @@ pqc_status_t pqc_kem_decaps(uint8_t *shared_secret,
                             const uint8_t *secret_key,
                             size_t secret_key_len);
 
+/*
+ * Select the process-global signature backend. Like the KEM selector, this is
+ * not thread-safe when callers reconfigure it concurrently.
+ */
 pqc_status_t pqc_set_signature_algorithm(pqc_sig_algorithm_t algorithm);
 pqc_sig_algorithm_t pqc_get_signature_algorithm(void);
 const char *pqc_get_signature_algorithm_name(void);
@@ -86,6 +94,10 @@ pqc_status_t pqc_sig_verify(const uint8_t *signature,
                             const uint8_t *public_key,
                             size_t public_key_len);
 
+/*
+ * Best-effort secret buffer clearing. This function uses platform/library
+ * primitives where available and falls back to a compiler-barrier pattern.
+ */
 void secure_memzero(void *ptr, size_t len);
 const char *pqc_status_to_string(pqc_status_t status);
 

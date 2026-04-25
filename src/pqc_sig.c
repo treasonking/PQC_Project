@@ -22,16 +22,20 @@ static pqc_sig_algorithm_t g_sig_algorithm = PQC_SIG_ALG_ML_DSA_65_REF;
 static pqc_sig_algorithm_t g_sig_algorithm = PQC_SIG_ALG_ML_DSA_65_DUMMY;
 #endif
 
-static void ensure_rng_seeded(void) {
+/*
+ * Test-only RNG for the dummy backend. It is deliberately named as insecure so
+ * callers do not confuse dummy key/signature generation with production crypto.
+ */
+static void ensure_insecure_test_rng_seeded(void) {
     if (!g_sig_rng_seeded) {
         srand((unsigned int)time(NULL));
         g_sig_rng_seeded = 1;
     }
 }
 
-static void random_bytes(uint8_t *out, size_t len) {
+static void insecure_test_random_bytes(uint8_t *out, size_t len) {
     size_t i;
-    ensure_rng_seeded();
+    ensure_insecure_test_rng_seeded();
     for (i = 0; i < len; ++i) {
         out[i] = (uint8_t)(rand() & 0xFF);
     }
@@ -83,9 +87,9 @@ static pqc_status_t dummy_sig_keypair(uint8_t *public_key,
         return PQC_ERR_BUFFER_TOO_SMALL;
     }
 
-    random_bytes(public_key, DUMMY_SIG_PUBLIC_KEY_SIZE);
+    insecure_test_random_bytes(public_key, DUMMY_SIG_PUBLIC_KEY_SIZE);
     memcpy(secret_key, public_key, DUMMY_SIG_PUBLIC_KEY_SIZE);
-    random_bytes(secret_key + DUMMY_SIG_PUBLIC_KEY_SIZE, DUMMY_SIG_SECRET_KEY_SIZE - DUMMY_SIG_PUBLIC_KEY_SIZE);
+    insecure_test_random_bytes(secret_key + DUMMY_SIG_PUBLIC_KEY_SIZE, DUMMY_SIG_SECRET_KEY_SIZE - DUMMY_SIG_PUBLIC_KEY_SIZE);
     return PQC_OK;
 }
 

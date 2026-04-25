@@ -12,7 +12,8 @@ C 기반 PQC 모듈 개인 프로젝트입니다.
 | Focus | Summary |
 | --- | --- |
 | Why this architecture | `pqc_module`(공통 인터페이스)와 `pqc_kem`/`pqc_sig`(알고리즘 계층)를 분리해, CLI/테스트 코드를 유지한 채 백엔드(Dummy ↔ PQClean Ref)를 교체할 수 있도록 설계했습니다. |
-| Security boundary | 학습/참조 구현 통합이 목적이며, side-channel 대응, production hardening, 인증(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위 밖입니다. |
+| Direct project value | 공통 API, 상태 코드 기반 오류 흐름, CLI/테스트/벤치마크/CI 연결, KAT/변조/실패 경로 검증을 직접 설계하고 통합했습니다. |
+| Security boundary | 학습/참조 구현 통합이 목적이며, side-channel 대응, production hardening, thread-safety, 인증(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위 밖입니다. |
 | Test evidence | 정상 경로(라운드트립/KAT) + 실패 경로(변조 입력, 길이 오류, 빈 메시지, 누락/손상 파일)를 CI에서 자동 검증합니다. |
 
 ## Architecture Diagram
@@ -49,7 +50,9 @@ Latest sample (`mlkem-ref` + `mldsa-ref`, `iterations=1000`):
 ## Security Scope Boundary
 
 이 저장소는 **학습/참조 구현 통합 중심**입니다.  
-즉, side-channel 완화, production hardening, 인증 대응(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위에 포함하지 않습니다.
+즉, side-channel 완화, production hardening, thread-safety, 인증 대응(FIPS/KCMVP), 운영 키관리(HSM/감사추적)는 현재 범위에 포함하지 않습니다.
+
+더미 백엔드는 API/CLI/테스트 흐름 검증용이며, `rand()` 기반 테스트 RNG를 사용하므로 암호학적 용도로 사용하면 안 됩니다.
 
 ## Validation Snapshot
 
@@ -158,6 +161,11 @@ cmake -S . -B build
 cmake --build build
 ```
 
+Warning policy:
+- GCC/Clang builds enable `-Wall -Wextra -Wpedantic`.
+- MSVC builds enable `/W4`.
+- Third-party reference code is kept vendored and documented separately; project code should stay warning-clean under the enabled policy.
+
 Windows 예시:
 
 ```powershell
@@ -213,7 +221,8 @@ ctest --test-dir build --output-on-failure
 
 - 민감 데이터(비밀키/공유비밀/서명 내부값) 원문을 로그에 출력하지 않습니다.
 - 민감 버퍼는 `secure_memzero`로 정리합니다.
-- 더미 알고리즘은 `rand()` 기반으로 암호학적으로 안전하지 않습니다.
+- 더미 알고리즘은 `rand()` 기반 테스트 RNG를 사용하므로 production 사용 금지입니다.
+- 활성 알고리즘 선택은 프로세스 전역 상태를 사용하므로 thread-safe API가 아닙니다.
 - constant-time/side-channel 완전 대응은 현재 범위 밖입니다.
 - 이 저장소는 학습/포트폴리오 목적이며 상용 배포 수준의 보증을 제공하지 않습니다.
 

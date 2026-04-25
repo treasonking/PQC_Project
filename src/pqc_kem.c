@@ -19,16 +19,20 @@ enum {
 static int g_rng_seeded = 0;
 static pqc_algorithm_t g_active_algorithm = PQC_ALG_ML_KEM_768_DUMMY;
 
-static void ensure_rng_seeded(void) {
+/*
+ * Test-only RNG for the dummy backend. It exists only to exercise API/CLI/test
+ * paths when a reference backend is unavailable; it is not cryptographically safe.
+ */
+static void ensure_insecure_test_rng_seeded(void) {
     if (!g_rng_seeded) {
         srand((unsigned int)time(NULL));
         g_rng_seeded = 1;
     }
 }
 
-static void random_bytes(uint8_t *out, size_t len) {
+static void insecure_test_random_bytes(uint8_t *out, size_t len) {
     size_t i;
-    ensure_rng_seeded();
+    ensure_insecure_test_rng_seeded();
     for (i = 0; i < len; ++i) {
         out[i] = (uint8_t)(rand() & 0xFF);
     }
@@ -45,9 +49,9 @@ static pqc_status_t dummy_keypair(uint8_t *public_key,
         return PQC_ERR_BUFFER_TOO_SMALL;
     }
 
-    random_bytes(public_key, DUMMY_PUBLIC_KEY_SIZE);
+    insecure_test_random_bytes(public_key, DUMMY_PUBLIC_KEY_SIZE);
     memcpy(secret_key, public_key, DUMMY_PUBLIC_KEY_SIZE);
-    random_bytes(secret_key + DUMMY_PUBLIC_KEY_SIZE, DUMMY_SECRET_KEY_SIZE - DUMMY_PUBLIC_KEY_SIZE);
+    insecure_test_random_bytes(secret_key + DUMMY_PUBLIC_KEY_SIZE, DUMMY_SECRET_KEY_SIZE - DUMMY_PUBLIC_KEY_SIZE);
     return PQC_OK;
 }
 
@@ -69,7 +73,7 @@ static pqc_status_t dummy_encaps(uint8_t *ciphertext,
         return PQC_ERR_BUFFER_TOO_SMALL;
     }
 
-    random_bytes(nonce, sizeof(nonce));
+    insecure_test_random_bytes(nonce, sizeof(nonce));
     memcpy(ciphertext, nonce, sizeof(nonce));
 
     for (i = sizeof(nonce); i < DUMMY_CIPHERTEXT_SIZE; ++i) {
@@ -119,10 +123,8 @@ static pqc_status_t dummy_decaps(uint8_t *shared_secret,
     return PQC_OK;
 }
 
-/*
- * Placeholder backend for third_party ML-KEM reference implementation wiring.
- * Real implementation should live under third_party/ and populate function pointers.
- */
+#if !PQC_ENABLE_MLKEM_REF
+/* Placeholder backend used only when third_party ML-KEM is unavailable. */
 static pqc_status_t ref_not_connected_keypair(uint8_t *public_key,
                                               size_t public_key_len,
                                               uint8_t *secret_key,
@@ -163,6 +165,7 @@ static pqc_status_t ref_not_connected_decaps(uint8_t *shared_secret,
     (void)secret_key_len;
     return PQC_ERR_INTERNAL;
 }
+#endif
 
 #if PQC_ENABLE_MLKEM_REF
 static pqc_status_t ref_mlkem_keypair(uint8_t *public_key,
